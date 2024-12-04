@@ -14,7 +14,7 @@ const productSchema = new Schema(
       type: Number,
       required: true,
     },
-    images: [String],
+    images: [{ type: String, required: true }],
     priceInfo: {
       mrp: { type: Number, required: true },
       sellingPrice: { type: Number, required: true },
@@ -25,13 +25,13 @@ const productSchema = new Schema(
         required: true,
         enum: ["available", "self-delivered"],
       },
-      cost: Number,
+      cost: { type: Number, required: true },
     },
     owner: {
       type: Schema.Types.ObjectId,
       ref: "Seller",
     },
-    category: [String],
+    category: { type: String, required: true },
     otherDetails: [String],
     warranty: {
       type: String,
