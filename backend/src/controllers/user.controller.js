@@ -73,7 +73,7 @@ const loginUser = asyncExe(async (req, res) => {
 
   const accessToken = await generateToken(user);
 
-  user.select("-password");
+  const loggedinUser = await User.findById(user._id).select("-password");
 
   const options = {
     httpOnly: true,
@@ -83,7 +83,13 @@ const loginUser = asyncExe(async (req, res) => {
   res
     .status(200)
     .cookie("accessToken", accessToken, options)
-    .json(new ApiResponse(200, { user, accessToken }, "loggedin successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        { loggedinUser, accessToken },
+        "loggedin successfully"
+      )
+    );
 });
 
 const logoutUser = asyncExe(async (req, res) => {
