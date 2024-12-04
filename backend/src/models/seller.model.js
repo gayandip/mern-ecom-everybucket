@@ -26,8 +26,7 @@ const sellerSchema = new Schema(
       },
     ],
     contact: {
-      phone: [String],
-      whatsApp: [String],
+      phone: { type: String, required: true },
       address: {
         type: String,
         required: true,

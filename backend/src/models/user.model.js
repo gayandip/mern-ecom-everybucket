@@ -56,11 +56,8 @@ const userSchema = new Schema(
       cardsDetails: [cardSchema],
       upiAddresses: [String],
     },
-    sellerID: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Seller",
-      },
+    stores: [
+      { name: String, id: { type: Schema.Types.ObjectId, ref: "Seller" } },
     ],
     orders: [
       {
