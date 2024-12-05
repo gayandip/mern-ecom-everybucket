@@ -7,21 +7,30 @@ import { Category } from "../models/category.model.js";
 import { unlinkFile } from "../utils/unlinkFile.js";
 
 const listNewProduct = asyncExe(async (req, res) => {
+  const imgUrls = req.files?.images;
+  if (!imgUrls.length > 0) {
+    throw new ApiError(400, "empty files");
+  }
+
   if (!(req.user.stores.length > 0)) {
+    imgUrls.map((file) => unlinkFile(file.path));
     throw new ApiError(400, "you dont have any store");
   }
 
   const storeID = req.params.storeid;
   if (!storeID) {
+    imgUrls.map((file) => unlinkFile(file.path));
     throw new ApiError(400, "please provide a store ID");
   }
 
   const store = await Seller.findById(storeID);
   if (!store) {
+    imgUrls.map((file) => unlinkFile(file.path));
     throw new ApiError(400, "no store found: enter valid ID");
   }
 
   if (!(store.user == req.user._id)) {
+    imgUrls.map((file) => unlinkFile(file.path));
     throw new ApiError(401, "you are not the owner of the store");
   }
 
@@ -38,11 +47,6 @@ const listNewProduct = asyncExe(async (req, res) => {
     warranty,
   } = req.body;
 
-  const imgUrls = req.files?.images;
-  if (!imgUrls.length > 0) {
-    throw new ApiError(400, "empty files");
-  }
-
   if (
     [
       name,
@@ -56,12 +60,12 @@ const listNewProduct = asyncExe(async (req, res) => {
       warranty,
     ].some((field) => toString(field)?.trim() === "")
   ) {
-    imgUrls.map((file) => unlinkFile(file));
+    imgUrls.map((file) => unlinkFile(file.path));
     throw new ApiError(400, "empty fields");
   }
 
   if (otherDetails.length == 0) {
-    imgUrls.map((file) => unlinkFile(file));
+    imgUrls.map((file) => unlinkFile(file.path));
     throw new ApiError(400, "empty fields");
   }
 
@@ -81,7 +85,7 @@ const listNewProduct = asyncExe(async (req, res) => {
   });
 
   if (!product) {
-    imgUrls.map((file) => unlinkFile(file));
+    imgUrls.map((file) => unlinkFile(file.path));
     throw new ApiError(500, "error creating product");
   }
 
@@ -90,6 +94,8 @@ const listNewProduct = asyncExe(async (req, res) => {
     product: product._id,
   });
   if (!productCategory) {
+    await Product.findByIdAndDelete(product._id);
+    imgUrls.map((file) => unlinkFile(file.path));
     throw new ApiError(500, "error creating category");
   }
 
@@ -99,6 +105,8 @@ const listNewProduct = asyncExe(async (req, res) => {
     { new: true }
   );
   if (!updatedStore) {
+    await Product.findByIdAndDelete(product._id);
+    imgUrls.map((file) => unlinkFile(file.path));
     throw new ApiError(500, "store update failed");
   }
 
