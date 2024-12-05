@@ -59,12 +59,6 @@ const userSchema = new Schema(
     stores: [
       { name: String, id: { type: Schema.Types.ObjectId, ref: "Seller" } },
     ],
-    orders: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Order",
-      },
-    ],
   },
 
   {

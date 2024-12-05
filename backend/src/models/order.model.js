@@ -48,8 +48,8 @@ const orderSchema = new Schema(
     buyer: { type: Schema.Types.ObjectId, ref: "User" },
     status: {
       type: String,
-      enum: ["processing", "delivered", "cancelled"],
-      default: "processing",
+      enum: ["processing", "delivered", "cancelled", "waiting-to-accept"],
+      default: "waiting-to-accept",
     },
   },
 
