@@ -6,15 +6,21 @@ import {
   getCategorizedProduct,
   getProduct,
   listNewProduct,
+  verifyToListProduct,
 } from "../controllers/product.controller.js";
 
 const productRouter = Router();
 
 productRouter
   .route("/add-new/:storeid")
-  .post(verifyJWT, upload.array("images", 3), listNewProduct);
+  .post(
+    verifyJWT,
+    verifyToListProduct,
+    upload.array("images", 3),
+    listNewProduct
+  );
 productRouter.route("/get/all/from-store/:id").get(getAllProductsFromStore);
 productRouter.route("/get/:id").get(getProduct);
-productRouter.route("/get/:category").get(getCategorizedProduct);
+productRouter.route("/category").get(getCategorizedProduct);
 
 export { productRouter };

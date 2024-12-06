@@ -51,7 +51,7 @@ const loginUser = asyncExe(async (req, res) => {
   const { uniqueUserId, password } = req.body;
 
   if ([uniqueUserId, password].some((field) => field?.trim() === "")) {
-    throw ApiError(400, "empty credentials");
+    throw new ApiError(400, "empty credentials");
   }
 
   let data = {};

@@ -21,9 +21,8 @@ const productSchema = new Schema(
     },
     delivery: {
       option: {
-        type: String,
+        type: Boolean,
         required: true,
-        enum: ["available", "self-delivered"],
       },
       cost: { type: Number, required: true },
     },

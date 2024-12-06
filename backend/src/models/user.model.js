@@ -2,33 +2,47 @@ import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-const cardSchema = new Schema({
-  type: {
-    type: String,
-    enum: {
-      values: ["debit", "credit"],
-      message: "{VALUE} is not credit or debit",
+const cardSchema = new Schema(
+  {
+    type: {
+      type: String,
+      enum: {
+        values: ["debit", "credit"],
+        message: "{VALUE} is not credit or debit",
+      },
     },
+    number: String,
+    cvv: String,
+    expiry: Date,
+    name: String,
+    issuer: String,
+    serviceProvider: String,
   },
-  number: String,
-  cvv: String,
-  expiry: Date,
-  name: String,
-  issuer: String,
-  serviceProvider: String,
-});
+  { _id: false }
+);
 
-const addressSchema = new Schema({
-  pincode: String,
-  landmark: String,
-  state: String,
-  city: String,
-  street: String,
-  houseNo: String,
-  phone: String,
-  alternatePhone: String,
-  name: String,
-});
+const addressSchema = new Schema(
+  {
+    pincode: String,
+    landmark: String,
+    state: String,
+    city: String,
+    street: String,
+    houseNo: String,
+    phone: String,
+    alternatePhone: String,
+    name: String,
+  },
+  { _id: false }
+);
+
+const store = new Schema(
+  {
+    name: { type: String, required: true },
+    id: { type: Schema.Types.ObjectId, ref: "Seller", required: true },
+  },
+  { _id: false }
+);
 
 const userSchema = new Schema(
   {
@@ -56,9 +70,7 @@ const userSchema = new Schema(
       cardsDetails: [cardSchema],
       upiAddresses: [String],
     },
-    stores: [
-      { name: String, id: { type: Schema.Types.ObjectId, ref: "Seller" } },
-    ],
+    stores: [store],
   },
 
   {

@@ -1,5 +1,5 @@
 import fs from "fs";
-import { ApiError } from "./ApiError";
+import { ApiError } from "./ApiError.js";
 
 const unlinkFile = (file) => {
   fs.unlink(file, (err) => {

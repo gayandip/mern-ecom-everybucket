@@ -15,7 +15,9 @@ const createStore = asyncExe(async (req, res) => {
     throw new ApiError(400, "empty fields");
   }
 
-  const existingStore = await Seller.findOne({ storeName });
+  const existingStore = await Seller.findOne({
+    $and: [{ user: req.user._id }, { storeName }],
+  });
   if (existingStore) {
     throw new ApiError(400, "store name already exist");
   }
