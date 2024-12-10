@@ -10,28 +10,29 @@ const cardSchema = new Schema(
         values: ["debit", "credit"],
         message: "{VALUE} is not credit or debit",
       },
+      required: true,
     },
-    number: String,
-    cvv: String,
-    expiry: Date,
-    name: String,
-    issuer: String,
-    serviceProvider: String,
+    number: { type: String, required: true },
+    cvv: { type: String, required: true },
+    expiry: { type: Date, required: true },
+    name: { type: String, required: true },
+    issuer: { type: String, required: true },
+    serviceProvider: { type: String, required: true },
   },
   { _id: false }
 );
 
 const addressSchema = new Schema(
   {
-    pincode: String,
-    landmark: String,
-    state: String,
-    city: String,
-    street: String,
-    houseNo: String,
-    phone: String,
+    name: { type: String, required: true },
+    phone: { type: String, required: true },
     alternatePhone: String,
-    name: String,
+    pincode: { type: Number, required: true },
+    city: { type: String, required: true },
+    street: { type: String, required: true },
+    landmark: { type: String, required: true },
+    state: { type: String, required: true },
+    houseNo: String,
   },
   { _id: false }
 );
@@ -65,10 +66,10 @@ const userSchema = new Schema(
       type: String,
       required: [true, "password required"],
     },
-    addresses: [addressSchema],
+    address: addressSchema,
     paymentDetails: {
-      cardsDetails: [cardSchema],
-      upiAddresses: [String],
+      cardDetails: cardSchema,
+      upiAddress: String,
     },
     stores: [store],
   },
@@ -101,4 +102,6 @@ userSchema.methods.generateAccessToken = function () {
   );
 };
 
-export const User = mongoose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
+
+export { User, addressSchema };

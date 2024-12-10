@@ -3,35 +3,106 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Order } from "../models/order.model.js";
 import { Seller } from "../models/seller.model.js";
+import { Product } from "../models/product.model.js";
+import mongoose from "mongoose";
 
 const placeOrder = asyncExe(async (req, res) => {
   const generateOrderID = () => {
     return `EBOD${Date.now()}${Math.floor(Math.random() * 100)}`;
   };
 
-  const { totalPrice, paymentType, seller, address, products } = req.body.order;
+  const product = req.body.product || {};
+  const sellerID = req.body.seller;
 
-  if ([totalPrice, paymentType, seller].some((field) => field?.trim() === "")) {
-    throw new ApiError(400, "proper order details required");
+  if (!(product.id && product.quantity && product.delivery)) {
+    throw new ApiError(400, "product details required");
   }
-  if (Object.keys(address).length < 7) {
-    throw new ApiError(400, "proper address details required");
-  }
-  if (!products.length) {
-    throw new ApiError(400, "minimum one product required");
+  if (!sellerID) {
+    throw new ApiError(400, "seller id required");
   }
 
-  const placedOrder = await Order.create({
-    orderID: generateOrderID(),
-    totalPrice,
-    paymentType,
-    seller,
-    buyer: req.user._id,
-    products,
-    address,
-  });
+  product.id = new mongoose.Types.ObjectId(product.id);
+  product.quantity = Number(product.quantity);
+  product.delivery = Boolean(product.delivery);
+
+  const updatedProduct = await Product.findOneAndUpdate(
+    {
+      _id: product.id,
+      owner: sellerID,
+      stocks: { $gte: product.quantity },
+    },
+    {
+      $inc: { stocks: -product.quantity },
+    },
+    { new: true }
+  );
+  if (!updatedProduct) {
+    throw new ApiError(400, "product not available");
+  }
+
+  const productDetails = await Product.aggregate([
+    {
+      $match: {
+        _id: product.id,
+      },
+    },
+    {
+      $addFields: {
+        quantity: product.quantity,
+        totalPrice: {
+          $multiply: ["$priceInfo.sellingPrice", product.quantity],
+        },
+        otherCost: {
+          $cond: {
+            if: {
+              $and: [
+                { $eq: [product.delivery, true] },
+                { $eq: ["$delivery.option", true] },
+              ],
+            },
+            then: "$delivery.cost",
+            else: 0,
+          },
+        },
+        id: "$_id",
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        product: {
+          id: "$id",
+          quantity: "$quantity",
+          name: "$name",
+          price: "$priceInfo.sellingPrice",
+          delivery: { $and: [product.delivery, "$delivery.option"] },
+        },
+        seller: "$owner",
+        price: {
+          sumTotal: "$totalPrice",
+          others: "$otherCost",
+          grandTotal: {
+            $sum: ["$totalPrice", "$otherCost"],
+          },
+        },
+      },
+    },
+  ]);
+
+  let orderdata = productDetails[0];
+  orderdata.orderID = generateOrderID();
+  orderdata.buyer = req.user._id;
+
+  if (orderdata.product.delivery) {
+    orderdata.address = req.user.address;
+  }
+
+  const placedOrder = await Order.create(orderdata);
 
   if (!placedOrder) {
+    await Product.findByIdAndUpdate(_id, {
+      $inc: { stocks: product.quantity },
+    });
     throw new ApiError(500, "error placing order");
   }
 
@@ -41,10 +112,7 @@ const placeOrder = asyncExe(async (req, res) => {
 });
 
 const getUserOrders = asyncExe(async (req, res) => {
-  const status = req.query.status;
-  if (!status) {
-    throw new ApiError(400, "status query required");
-  }
+  const status = req.query.status || "all";
 
   let orders;
   if (status == "all") {
@@ -58,14 +126,11 @@ const getUserOrders = asyncExe(async (req, res) => {
     .json(new ApiResponse(200, orders, "orders fetched successfully"));
 });
 
-const getPlacedOrders = asyncExe(async (req, res) => {
+const getStoreOrders = asyncExe(async (req, res) => {
   const id = req.params.id;
-  const status = req.query.status;
+  const status = req.query.status || "all";
   if (!id) {
     throw new ApiError(400, "store id required");
-  }
-  if (!status) {
-    throw new ApiError(400, "status query required");
   }
 
   const user = await Seller.findById(id).select("user");
@@ -73,7 +138,7 @@ const getPlacedOrders = asyncExe(async (req, res) => {
     throw new ApiError(400, "wrong store id");
   }
 
-  if (!(user.user == req.user._id)) {
+  if (!(user.user.toString() === req.user._id.toString())) {
     throw new ApiError(401, "not authorized");
   }
 
@@ -89,4 +154,4 @@ const getPlacedOrders = asyncExe(async (req, res) => {
     .json(new ApiResponse(200, orders, "orders fetched successfully"));
 });
 
-export { placeOrder, getPlacedOrders, getUserOrders };
+export { placeOrder, getStoreOrders, getUserOrders };

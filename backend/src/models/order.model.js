@@ -1,30 +1,23 @@
 import mongoose, { Schema } from "mongoose";
+import { addressSchema } from "./user.model.js";
 
-const addressSchema = new Schema({
-  name: { type: String, required: true },
-  phone: { type: String, required: true },
-  alternatePhone: String,
-  pincode: { type: Number, required: true },
-  city: { type: String, required: true },
-  street: { type: String, required: true },
-  landmark: { type: String, required: true },
-  state: { type: String, required: true },
-  houseNo: String,
-});
-
-const ProductSchema = new Schema({
-  id: {
-    type: Schema.Types.ObjectId,
-    ref: "Product",
+const ProductSchema = new Schema(
+  {
+    id: {
+      type: Schema.Types.ObjectId,
+      ref: "Product",
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+    name: { type: String, required: true },
+    price: { type: Number, required: true },
+    delivery: { type: Boolean, required: true },
   },
-  quantity: {
-    type: Number,
-    required: true,
-    min: 1,
-  },
-  name: String,
-  total: Number,
-});
+  { _id: false }
+);
 
 const orderSchema = new Schema(
   {
@@ -33,22 +26,34 @@ const orderSchema = new Schema(
       required: true,
       unique: true,
     },
-    totalPrice: {
-      type: Number,
-      required: true,
+    price: {
+      sumTotal: { type: Number, required: true },
+      others: { type: Number, required: true },
+      grandTotal: { type: Number, required: true },
     },
-    products: [ProductSchema],
+    payment: {
+      status: {
+        type: String,
+        enum: ["Paid", "Due"],
+        default: "Due",
+      },
+      paymentID: { type: Schema.Types.ObjectId, ref: "Payment" },
+    },
+    product: ProductSchema,
     address: addressSchema,
-    paymentType: {
-      type: String,
-      enum: ["online", "offline"],
-      required: true,
-    },
     seller: { type: Schema.Types.ObjectId, ref: "Seller" },
     buyer: { type: Schema.Types.ObjectId, ref: "User" },
     status: {
       type: String,
-      enum: ["processing", "delivered", "cancelled", "waiting-to-accept"],
+      enum: [
+        "waiting-to-accept",
+        "accepted",
+        "processing",
+        "processed",
+        "delivered",
+        "cancelled",
+        "returned",
+      ],
       default: "waiting-to-accept",
     },
   },
