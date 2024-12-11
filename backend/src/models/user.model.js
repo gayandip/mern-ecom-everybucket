@@ -104,4 +104,4 @@ userSchema.methods.generateAccessToken = function () {
 
 const User = mongoose.model("User", userSchema);
 
-export { User, addressSchema };
+export { User, addressSchema, cardSchema };
