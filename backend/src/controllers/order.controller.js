@@ -154,4 +154,46 @@ const getStoreOrders = asyncExe(async (req, res) => {
     .json(new ApiResponse(200, orders, "orders fetched successfully"));
 });
 
-export { placeOrder, getStoreOrders, getUserOrders };
+const acceptOrder = asyncExe(async (req, res) => {
+  const sellerID = req.body.seller;
+  const orderID = req.body.order.id;
+  const costOrDiscount = Number(req.body.order.amount) || 0;
+  if (!sellerID) {
+    throw new ApiError(400, "seller ID required");
+  }
+  if (!orderID) {
+    throw new ApiError(400, "order ID required");
+  }
+
+  const user = await Seller.findById(sellerID).select("user");
+  if (!user) {
+    throw new ApiError(400, "seller not found");
+  }
+  if (!(user.user.toString() === req.user._id.toString())) {
+    throw new ApiError(401, "not authorized");
+  }
+
+  const order = await Order.findOneAndUpdate(
+    {
+      _id: orderID,
+      seller: sellerID,
+      status: { $in: ["waiting-to-accept", "accepted"] },
+    },
+    {
+      $set: { status: "accepted" },
+      $inc: {
+        "price.others": costOrDiscount,
+        "price.grandTotal": costOrDiscount,
+      },
+    },
+    { new: true }
+  );
+
+  if (!order) {
+    throw new ApiError(400, "order update or found error");
+  }
+
+  res.status(200).json(new ApiResponse(200, order, "order update success"));
+});
+
+export { placeOrder, getStoreOrders, getUserOrders, acceptOrder };
