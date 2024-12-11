@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: everybucket-deployment
+  labels:
+    app: node-everybucket
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: node-everybucket
+  template:
+    metadata:
+      labels:
+        app: node-everybucket
+    spec:
+      containers:
+      - name: node-everybucket
+        image: everybucket:1.0
+        ports:
+        - containerPort: 5001
