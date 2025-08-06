@@ -1,4 +1,6 @@
 logs
 *.log
+*.log*
 node_modules
 .vscode/*
+.env
