@@ -1,35 +1,58 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useApiPost } from "../hooks/useApiPost";
+import { useAppContext } from "../context/AppContext";
+import { useNavigate } from "react-router-dom";
 
 function Register() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+
+  const { post, loading, error, data } = useApiPost();
+  const { setLogin, setUserData, login } = useAppContext();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (login) {
+      navigate("/", { replace: true });
+    }
+  }, [login, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !phone || !email || !password) {
-      setError("Please fill all fields.");
+      setError("All fields are required");
       return;
     }
-    setError("");
-    setLoading(true);
+
+    const emailRegex = /^[\w-.]+@[\w-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      setError("Invalid Email. Ex: abc@email.com");
+      return;
+    }
+
+    const phoneRegex = /^\+91[6-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      setError("Invalid Phone. Ex: +91[6-9]xxxxxxxxx");
+      return;
+    }
+    try {
+      const res = await post("/users/register", {
+        name,
+        phone,
+        email,
+        password,
+      });
+      if (res && res.success) {
+        setLogin(true);
+        setUserData(res.user || {});
+        navigate("/user/account");
+      }
+    } catch (err) {
+      setError("Registration failed");
+    }
     setPassword("");
-    // Simulate registration request
-    setTimeout(() => {
-      setLoading(false);
-      // Example: setError("Registration failed.");
-    }, 1500);
-    // Uncomment and use actual registration logic here
-    // try {
-    //   await registerApi({ name, phone, email, password });
-    //   setLoading(false);
-    // } catch (err) {
-    //   setError("Registration failed");
-    //   setLoading(false);
-    // }
   };
 
   return (
@@ -42,6 +65,11 @@ function Register() {
           Register
         </h2>
         {error && <div className="mb-4 text-red-500 text-center">{error}</div>}
+        {data && data.success && (
+          <div className="mb-4 text-green-600 text-center">
+            Registration successful!
+          </div>
+        )}
         <div className="mb-4">
           <label className="block mb-2 font-semibold" htmlFor="name">
             Name
@@ -62,6 +90,7 @@ function Register() {
           <input
             type="tel"
             id="phone"
+            placeholder="+91[6-9]xxxxxxxxx"
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -75,6 +104,7 @@ function Register() {
           <input
             type="email"
             id="email"
+            placeholder="abc@email.com"
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
             value={email}
             onChange={(e) => setEmail(e.target.value)}

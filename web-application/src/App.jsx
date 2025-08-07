@@ -14,6 +14,8 @@ import StoreOrders from "./pages/seller/StoreOrders";
 import ProductDetails from "./pages/ProductDetails";
 import PlaceOrder from "./pages/PlaceOrder";
 import ListProduct from "./pages/seller/ListProduct";
+import ProtectedRoute from "./components/ProtectedRoute";
+import SellerRoute from "./components/SellerRoute";
 function App() {
   return (
     <div className="min-h-screen flex flex-col">
@@ -25,17 +27,66 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/products" element={<Products />} />
           <Route path="/product/:id" element={<ProductDetails />} />
-          <Route path="/order/:id" element={<PlaceOrder />} />
+          <Route
+            path="/order/:id"
+            element={
+              <ProtectedRoute>
+                <PlaceOrder />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/user">
-            <Route path="account" element={<Account />} />
-            <Route path="orders" element={<Orders />} />
+            <Route
+              path="account"
+              element={
+                <ProtectedRoute>
+                  <Account />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="orders"
+              element={
+                <ProtectedRoute>
+                  <Orders />
+                </ProtectedRoute>
+              }
+            />
           </Route>
           <Route path="/store">
             <Route path="register" element={<RegisterStore />} />
-            <Route path="my-store" element={<Dashboard />} />
-            <Route path="my-products" element={<MyStoreProducts />} />
-            <Route path="my-orders" element={<StoreOrders />} />
-            <Route path="list-new-product" element={<ListProduct />} />
+            <Route
+              path="my-store"
+              element={
+                <SellerRoute>
+                  <Dashboard />
+                </SellerRoute>
+              }
+            />
+            <Route
+              path="my-products"
+              element={
+                <SellerRoute>
+                  <MyStoreProducts />
+                </SellerRoute>
+              }
+            />
+            <Route
+              path="my-orders"
+              element={
+                <SellerRoute>
+                  <StoreOrders />
+                </SellerRoute>
+              }
+            />
+            <Route
+              path="list-new-product"
+              element={
+                <SellerRoute>
+                  <ListProduct />
+                </SellerRoute>
+              }
+            />
           </Route>
         </Routes>
       </main>

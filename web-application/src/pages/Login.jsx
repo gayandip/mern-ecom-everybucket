@@ -1,33 +1,43 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAppContext } from "../context/AppContext";
+import { useNavigate } from "react-router-dom";
+import { useApiPost } from "../hooks/useApiPost";
 
 function Login() {
-  const [email, setEmail] = useState("");
+  const [uniqueID, setUniqueID] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+
+  const { login, setLogin, setUserData } = useAppContext();
+  const navigate = useNavigate();
+  const { post, loading, error: apiError, data } = useApiPost();
+
+  useEffect(() => {
+    if (login) {
+      navigate("/", { replace: true });
+    }
+  }, [login, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError("Please enter both email and password.");
+    if (!uniqueID || !password) {
+      setError("Please enter email/phone and password.");
       return;
     }
     setError("");
-    setLoading(true);
     setPassword("");
-    // Simulate login request
-    setTimeout(() => {
-      setLoading(false);
-      // Example: setError("Invalid credentials.");
-    }, 1500);
-    // Uncomment and use actual login logic here
-    // try {
-    //   await loginApi({ email, password });
-    //   setLoading(false);
-    // } catch (err) {
-    //   setError("Login failed");
-    //   setLoading(false);
-    // }
+    try {
+      const res = await post("/users/login", { uniqueID, password });
+      if (res && res.success) {
+        setLogin(true);
+        setUserData(res.user || {});
+        navigate("/");
+      } else if (res && res.message) {
+        setError(res.message);
+      }
+    } catch (err) {
+      setError("Login failed");
+    }
   };
 
   return (
@@ -39,18 +49,28 @@ function Login() {
         <h2 className="text-2xl font-bold mb-6 text-center text-green-600">
           Login
         </h2>
-        {error && <div className="mb-4 text-red-500 text-center">{error}</div>}
+        {(error || apiError) && (
+          <div className="mb-4 text-red-500 text-center">
+            {error || apiError}
+          </div>
+        )}
+        {data && data.success && (
+          <div className="mb-4 text-green-600 text-center">
+            Login successful!
+          </div>
+        )}
         <div className="mb-4">
-          <label className="block mb-2 font-semibold" htmlFor="email">
-            Email
+          <label className="block mb-2 font-semibold" htmlFor="uniqueID">
+            Email or Phone
           </label>
           <input
-            type="email"
-            id="email"
+            type="text"
+            id="uniqueID"
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={uniqueID}
+            onChange={(e) => setUniqueID(e.target.value)}
             required
+            placeholder="email or +91[6-9]XXXXXXXXX"
           />
         </div>
         <div className="mb-6">

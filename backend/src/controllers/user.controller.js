@@ -48,20 +48,15 @@ const registerUser = asyncExe(async (req, res) => {
 });
 
 const loginUser = asyncExe(async (req, res) => {
-  const { uniqueUserId, password } = req.body;
+  const { uniqueID, password } = req.body;
 
-  if ([uniqueUserId, password].some((field) => field?.trim() === "")) {
+  if ([uniqueID, password].some((field) => field?.trim() === "")) {
     throw new ApiError(400, "empty credentials");
   }
 
-  let data = {};
-  if (uniqueUserId.startsWith("+91")) {
-    data = { phoneNumber: uniqueUserId };
-  } else {
-    data = { email: uniqueUserId };
-  }
-
-  const user = await User.findOne(data);
+  const user = await User.findOne(
+    uniqueID.includes("@") ? { email: uniqueID } : { phoneNumber: uniqueID }
+  );
   if (!user) {
     throw new ApiError(404, "user not exist");
   }

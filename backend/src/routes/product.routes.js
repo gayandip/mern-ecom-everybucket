@@ -7,6 +7,7 @@ import {
   getProduct,
   listNewProduct,
   verifyToListProduct,
+  getAllProducts,
 } from "../controllers/product.controller.js";
 
 const productRouter = Router();
@@ -22,5 +23,6 @@ productRouter
 productRouter.route("/get/all/from-store/:id").get(getAllProductsFromStore);
 productRouter.route("/get/:id").get(getProduct);
 productRouter.route("/category").get(getCategorizedProduct);
+productRouter.route("/get/all").get(getAllProducts);
 
 export { productRouter };

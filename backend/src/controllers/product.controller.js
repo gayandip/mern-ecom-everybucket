@@ -179,10 +179,36 @@ const getCategorizedProduct = asyncExe(async (req, res) => {
     .json(new ApiResponse(200, products, "products fetched successfully"));
 });
 
+const getAllProducts = asyncExe(async (req, res) => {
+  let { page = 1, limit = 8 } = req.query;
+  page = parseInt(page);
+  limit = parseInt(limit);
+
+  const total = await Product.countDocuments();
+  const products = await Product.find()
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .exec();
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        products,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      },
+      "products fetched successfully"
+    )
+  );
+});
+
 export {
   listNewProduct,
   getAllProductsFromStore,
   getProduct,
   getCategorizedProduct,
+  getAllProducts,
   verifyToListProduct,
 };

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-function ProductCard({ img, title, price, id }) {
+function ProductCard({ img, title, priceInfo, id }) {
   return (
     <Link
       to={`/product/${id}`}
@@ -9,11 +9,20 @@ function ProductCard({ img, title, price, id }) {
     >
       <img
         src={img}
-        alt="New Arrival 1"
+        alt="item"
         className="w-24 h-24 object-cover mb-2 rounded"
       />
       <span className="font-semibold max-sm:text-sm text-md mb-1">{title}</span>
-      <span className="text-blue-600 font-bold">₹{price}</span>
+      <div className="mb-2">
+        {priceInfo?.mrp && priceInfo?.mrp !== priceInfo?.sellingPrice && (
+          <span className="text-gray-500 line-through text-sm mr-2">
+            ₹{priceInfo.mrp}
+          </span>
+        )}
+        <span className="text-blue-600 font-bold">
+          ₹{priceInfo?.sellingPrice}
+        </span>
+      </div>
       <Link to={`/order/${id}`} className="product-card-btn">
         Buy Now
       </Link>
