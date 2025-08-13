@@ -112,14 +112,7 @@ const placeOrder = asyncExe(async (req, res) => {
 });
 
 const getUserOrders = asyncExe(async (req, res) => {
-  const status = req.query.status || "all";
-
-  let orders;
-  if (status == "all") {
-    orders = await Order.find({ buyer: req.user._id });
-  } else {
-    orders = await Order.find({ $and: [{ buyer: req.user._id }, { status }] });
-  }
+  const orders = await Order.find({ buyer: req.user._id });
 
   res
     .status(200)

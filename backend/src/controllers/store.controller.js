@@ -54,7 +54,9 @@ const storeDetails = asyncExe(async (req, res) => {
     throw new ApiError(400, "store id required");
   }
 
-  const store = await Seller.findById(storeID);
+  const store = await Seller.findById(storeID).select(
+    "storeName ownerName description contact createdAt updatedAt"
+  );
   if (!store) {
     throw new ApiError(500, "cannot find store");
   }

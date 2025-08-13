@@ -105,4 +105,22 @@ const getCurrentUser = asyncExe(async (req, res) => {
     .json(new ApiResponse(200, req.user, "user fetched successfully"));
 });
 
-export { registerUser, loginUser, logoutUser, getCurrentUser };
+const updateAddress = asyncExe(async (req, res) => {
+  const { address } = req.body;
+  if (!address) {
+    throw new ApiError(400, "address is required");
+  }
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { $set: { address } },
+    { new: true }
+  ).select("-password");
+  if (!user) {
+    throw new ApiError(404, "user not found");
+  }
+  res
+    .status(200)
+    .json(new ApiResponse(200, user, "address updated successfully"));
+});
+
+export { registerUser, loginUser, logoutUser, getCurrentUser, updateAddress };

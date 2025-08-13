@@ -180,12 +180,17 @@ const getCategorizedProduct = asyncExe(async (req, res) => {
 });
 
 const getAllProducts = asyncExe(async (req, res) => {
-  let { page = 1, limit = 8 } = req.query;
+  let { page = 1, limit = 8, category } = req.query;
   page = parseInt(page);
   limit = parseInt(limit);
 
-  const total = await Product.countDocuments();
-  const products = await Product.find()
+  let filter = {};
+  if (category) {
+    filter.category = category;
+  }
+
+  const total = await Product.countDocuments(filter);
+  const products = await Product.find(filter)
     .skip((page - 1) * limit)
     .limit(limit)
     .exec();
@@ -204,11 +209,61 @@ const getAllProducts = asyncExe(async (req, res) => {
   );
 });
 
+const getNewArrivals = asyncExe(async (req, res) => {
+  let { limit = 4 } = req.query;
+  limit = parseInt(limit);
+
+  const products = await Product.find()
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .exec();
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, { products }, "new arrivals fetched successfully")
+    );
+});
+
+// Get stats for a store by store id
+const getStoreStats = asyncExe(async (req, res) => {
+  const storeID = req.params.id;
+  if (!storeID) {
+    throw new ApiError(400, "store id required");
+  }
+  // Count products
+  const productsCount = await Product.countDocuments({ owner: storeID });
+  // Count orders and revenue (assuming you have an Order model)
+  let ordersCount = 0;
+  let revenue = 0;
+  try {
+    const { Order } = await import("../models/order.model.js");
+    const orders = await Order.find({ store: storeID });
+    ordersCount = orders.length;
+    revenue = orders.reduce((sum, o) => sum + (o.price?.grandTotal || 0), 0);
+  } catch (e) {
+    // If Order model or data not available, skip
+  }
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        products: productsCount,
+        orders: ordersCount,
+        revenue,
+      },
+      "store stats fetched successfully"
+    )
+  );
+});
+
 export {
   listNewProduct,
   getAllProductsFromStore,
   getProduct,
   getCategorizedProduct,
   getAllProducts,
+  getNewArrivals,
+  getStoreStats,
   verifyToListProduct,
 };

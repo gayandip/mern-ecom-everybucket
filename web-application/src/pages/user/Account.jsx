@@ -1,11 +1,12 @@
-import React from "react";
 import { Link } from "react-router-dom";
+import { useAppContext } from "../../context/AppContext";
 
 const Account = () => {
+  const { userData } = useAppContext();
   const user = {
-    name: "John Doe",
-    email: "john@example.com",
-    phone: "+91 9876543210",
+    name: userData?.name || "",
+    email: userData?.email || "",
+    phone: userData?.phone || "",
   };
 
   const options = [

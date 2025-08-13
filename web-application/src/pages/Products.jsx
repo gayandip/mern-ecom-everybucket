@@ -1,17 +1,23 @@
 import ProductCard from "../components/ProductCard";
 import Search from "../components/Search";
 import { useEffect, useState } from "react";
-import useApiGet from "../hooks/useApiGet";
+import { useSearchParams } from "react-router-dom";
+import { useApiGet } from "../hooks/useApiGet";
 
 const Product = () => {
   const [products, setProducts] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-
   const [sort, setSort] = useState("");
-  const { data, loading, error } = useApiGet(
-    `/api/product/get/all?page=${page}&limit=8`
-  );
+  const [searchParams, setSearchParams] = useSearchParams();
+  const category = searchParams.get("category") || "";
+
+  // Build API URL with category if present
+  let apiUrl = `/api/product/get/all?page=${page}&limit=8`;
+  if (category) {
+    apiUrl += `&category=${encodeURIComponent(category)}`;
+  }
+  const { data, loading, error } = useApiGet(apiUrl);
 
   useEffect(() => {
     if (data && data.products) {
@@ -21,7 +27,7 @@ const Product = () => {
       } else {
         newProducts = [...products, ...data.products];
       }
-      // Apply sort after data is fetched
+      // Only sort the combined list for display
       if (sort === "Price: Low to High") {
         newProducts = [...newProducts].sort(
           (a, b) =>
@@ -34,9 +40,15 @@ const Product = () => {
         );
       }
       setProducts(newProducts);
-      setHasMore(page < data.totalPages);
+      setHasMore(data.products.length === 8 && page < data.totalPages);
     }
-  }, [data, page, sort]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, sort]);
+
+  // Reset products when sort or category changes
+  useEffect(() => {
+    setPage(1);
+  }, [sort, category]);
 
   const handleMore = () => {
     if (hasMore && !loading) setPage((prev) => prev + 1);

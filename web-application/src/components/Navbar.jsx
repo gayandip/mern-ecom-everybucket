@@ -1,51 +1,20 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-// import { useAppContext } from "../context/AppContext";
-// import { assets } from "../assets/assets";
-// import toast from "react-hot-toast";
+import { useAppContext } from "../context/AppContext";
+import { useApiPost } from "../hooks/useApiPost";
 const Navbar = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState(false);
+  const { login, setLogin, userData, setUserData } = useAppContext();
+  const { post: postApi } = useApiPost();
   const currentPath = window.location.pathname;
   const items = [
     { text: "Home", path: "/" },
     { text: "Account", path: "/user/account" },
     { text: "Orders", path: "/user/orders" },
-    { text: "Register Store", path: "store/register" },
-    { text: "My Store", path: "store/my-store" },
+    { text: "My Store", path: "/store/my-store" },
   ];
-  //   const {
-  //     user,
-  //     setUser,
-  //     showUserLogin,
-  //     setShowUserLogin,
-  //     navigate,
-  //     searchQuery,
-  //     setSearchQuery,
-  //     cartCount,
-  //     axios,
-  //   } = useAppContext();
 
-  //   const logout = async () => {
-  //     try {
-  //       const { data } = await axios.get("/api/user/logout");
-  //       if (data.success) {
-  //         setUser(null);
-  //         navigate("/");
-  //         toast.success(data.message);
-  //       } else {
-  //         toast.error(data.message);
-  //       }
-  //     } catch (error) {
-  //       toast.error(error.message);
-  //     }
-  //   };
-  //   useEffect(() => {
-  //     if (searchQuery.length > 0) {
-  //       navigate("/products");
-  //     }
-  //   }, []);
   return (
     <nav className="flex items-center justify-between px-6 md:px-16 lg:px-24 xl:px-32 py-4 border-b border-gray-300 bg-white relative transition-all">
       <Link to="/">
@@ -66,13 +35,17 @@ const Navbar = () => {
           </NavLink>
         ))}
 
-        {user ? (
+        {login ? (
           <div className="relative">
             <button
               className="btn"
-              onClick={() => {
-                setUser(false);
-                navigate("/");
+              onClick={async () => {
+                try {
+                  await postApi("/users/logout");
+                  setLogin(false);
+                  setUserData({});
+                  navigate("/");
+                } catch (err) {}
               }}
             >
               Logout
@@ -126,13 +99,17 @@ const Navbar = () => {
           </NavLink>
         ))}
 
-        {user ? (
+        {login ? (
           <div className="btn">
             <button
-              onClick={() => {
-                setUser(false);
+              onClick={async () => {
                 setOpen(false);
-                navigate("/");
+                try {
+                  await postApi("/users/logout");
+                  setLogin(false);
+                  setUserData({});
+                  navigate("/");
+                } catch (err) {}
               }}
             >
               Logout

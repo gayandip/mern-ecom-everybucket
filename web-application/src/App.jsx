@@ -1,3 +1,4 @@
+import AddAddress from "./pages/AddAddress";
 import { Route, Routes } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -16,6 +17,21 @@ import PlaceOrder from "./pages/PlaceOrder";
 import ListProduct from "./pages/seller/ListProduct";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SellerRoute from "./components/SellerRoute";
+
+const userRoutes = [
+  { path: "add-address", element: <AddAddress /> },
+  { path: "account", element: <Account /> },
+  { path: "orders", element: <Orders /> },
+  { path: "register-store", element: <RegisterStore /> },
+];
+
+const sellerRoutes = [
+  { path: "my-store", element: <Dashboard /> },
+  { path: "my-products", element: <MyStoreProducts /> },
+  { path: "my-orders", element: <StoreOrders /> },
+  { path: "list-new-product", element: <ListProduct /> },
+];
+
 function App() {
   return (
     <div className="min-h-screen flex flex-col">
@@ -36,57 +52,22 @@ function App() {
             }
           />
           <Route path="/user">
-            <Route
-              path="account"
-              element={
-                <ProtectedRoute>
-                  <Account />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="orders"
-              element={
-                <ProtectedRoute>
-                  <Orders />
-                </ProtectedRoute>
-              }
-            />
+            {userRoutes.map(({ path, element }) => (
+              <Route
+                key={path}
+                path={path}
+                element={<ProtectedRoute>{element}</ProtectedRoute>}
+              />
+            ))}
           </Route>
           <Route path="/store">
-            <Route path="register" element={<RegisterStore />} />
-            <Route
-              path="my-store"
-              element={
-                <SellerRoute>
-                  <Dashboard />
-                </SellerRoute>
-              }
-            />
-            <Route
-              path="my-products"
-              element={
-                <SellerRoute>
-                  <MyStoreProducts />
-                </SellerRoute>
-              }
-            />
-            <Route
-              path="my-orders"
-              element={
-                <SellerRoute>
-                  <StoreOrders />
-                </SellerRoute>
-              }
-            />
-            <Route
-              path="list-new-product"
-              element={
-                <SellerRoute>
-                  <ListProduct />
-                </SellerRoute>
-              }
-            />
+            {sellerRoutes.map(({ path, element }) => (
+              <Route
+                key={path}
+                path={path}
+                element={<SellerRoute>{element}</SellerRoute>}
+              />
+            ))}
           </Route>
         </Routes>
       </main>

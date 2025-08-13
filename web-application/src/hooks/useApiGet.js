@@ -21,6 +21,7 @@ export function useApiGet(url, options = {}) {
           ...options,
           signal: controller.signal,
         });
+
         setData(res.data);
       } catch (err) {
         if (!(axios.isCancel(err) || err.code === "ERR_CANCELED")) {

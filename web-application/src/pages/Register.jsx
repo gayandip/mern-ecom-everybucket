@@ -8,6 +8,7 @@ function Register() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [formError, setFormError] = useState("");
 
   const { post, loading, error, data } = useApiPost();
   const { setLogin, setUserData, login } = useAppContext();
@@ -22,19 +23,19 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !phone || !email || !password) {
-      setError("All fields are required");
+      setFormError("All fields are required");
       return;
     }
 
     const emailRegex = /^[\w-.]+@[\w-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email)) {
-      setError("Invalid Email. Ex: abc@email.com");
+      setFormError("Invalid Email. Ex: abc@email.com");
       return;
     }
 
     const phoneRegex = /^\+91[6-9]\d{9}$/;
     if (!phoneRegex.test(phone)) {
-      setError("Invalid Phone. Ex: +91[6-9]xxxxxxxxx");
+      setFormError("Invalid Phone. Ex: +91[6-9]xxxxxxxxx");
       return;
     }
     try {
@@ -45,12 +46,10 @@ function Register() {
         password,
       });
       if (res && res.success) {
-        setLogin(true);
-        setUserData(res.user || {});
-        navigate("/user/account");
+        navigate("/user/login");
       }
     } catch (err) {
-      setError("Registration failed");
+      setFormError("Registration failed");
     }
     setPassword("");
   };
@@ -64,7 +63,9 @@ function Register() {
         <h2 className="text-2xl font-bold mb-6 text-center text-green-600">
           Register
         </h2>
-        {error && <div className="mb-4 text-red-500 text-center">{error}</div>}
+        {formError && (
+          <div className="mb-4 text-red-500 text-center">{formError}</div>
+        )}
         {data && data.success && (
           <div className="mb-4 text-green-600 text-center">
             Registration successful!

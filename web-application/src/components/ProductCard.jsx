@@ -1,7 +1,12 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function ProductCard({ img, title, priceInfo, id }) {
+  const navigate = useNavigate();
+  const handleBuyNow = (e) => {
+    e.preventDefault(); // Prevent parent Link navigation
+    navigate(`/order/${id}`);
+  };
   return (
     <Link
       to={`/product/${id}`}
@@ -23,9 +28,9 @@ function ProductCard({ img, title, priceInfo, id }) {
           ₹{priceInfo?.sellingPrice}
         </span>
       </div>
-      <Link to={`/order/${id}`} className="product-card-btn">
+      <button type="button" className="product-card-btn" onClick={handleBuyNow}>
         Buy Now
-      </Link>
+      </button>
     </Link>
   );
 }

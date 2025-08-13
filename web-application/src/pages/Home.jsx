@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import Search from "../components/Search";
+import { useApiGet } from "../hooks/useApiGet";
 
 function Home() {
   const categories = [
@@ -16,36 +17,8 @@ function Home() {
     { name: "Beauty", image: "categories/cat-beauty.png" },
   ];
 
-  const newArrivals = [
-    {
-      _id: "1",
-      title: "Clothes",
-      price: 249,
-      img: "categories/cat-clothes.png",
-      url: `/product{id}`,
-    },
-    {
-      _id: "2",
-      title: "Electronics",
-      price: 2999,
-      img: "categories/cat-electronics.png",
-      url: `/product{id}`,
-    },
-    {
-      _id: "3",
-      title: "Beauty Essentials",
-      price: 299,
-      img: "categories/cat-beauty.png",
-      url: `/product{id}`,
-    },
-    {
-      _id: "4",
-      title: "Modern Furnitures",
-      price: 1999,
-      img: "categories/cat-furnitures.png",
-      url: `/product{id}`,
-    },
-  ];
+  const { data, loading, error } = useApiGet("/products/get/new-arrivals");
+  const newArrivals = data?.data.products || [];
 
   return (
     <>
@@ -101,17 +74,23 @@ function Home() {
       {/* New Arrivals Section */}
       <div className="w-full py-8 px-4">
         <h2 className="text-lg font-semibold my-4 px-7">New Arrivals</h2>
-
         <div className="card-layout">
-          {newArrivals.map((obj) => (
-            <ProductCard
-              key={obj._id}
-              img={obj.img}
-              title={obj.title}
-              price={obj.price}
-              id={obj._id}
-            />
-          ))}
+          {loading && <div>Loading...</div>}
+          {error && <div className="text-red-500">{error}</div>}
+          {!loading && !error && newArrivals.length === 0 && (
+            <div>No new arrivals found</div>
+          )}
+          {!loading &&
+            !error &&
+            newArrivals.map((product) => (
+              <ProductCard
+                key={product._id}
+                img={product.images?.[0]}
+                title={product.name}
+                priceInfo={product.priceInfo}
+                id={product._id}
+              />
+            ))}
         </div>
       </div>
     </>
