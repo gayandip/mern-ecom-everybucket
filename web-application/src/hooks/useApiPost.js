@@ -17,7 +17,7 @@ export function useApiPost() {
       setData(res.data);
       return res.data;
     } catch (err) {
-      setError(err.message);
+      setError(err);
     } finally {
       setLoading(false);
     }

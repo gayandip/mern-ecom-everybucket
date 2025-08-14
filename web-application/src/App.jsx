@@ -1,4 +1,6 @@
-import AddAddress from "./pages/AddAddress";
+import Address from "./pages/Address";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { Route, Routes } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -19,7 +21,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import SellerRoute from "./components/SellerRoute";
 
 const userRoutes = [
-  { path: "add-address", element: <AddAddress /> },
+  { path: "address", element: <Address /> },
   { path: "account", element: <Account /> },
   { path: "orders", element: <Orders /> },
   { path: "register-store", element: <RegisterStore /> },
@@ -72,6 +74,17 @@ function App() {
         </Routes>
       </main>
       <Footer />
+
+      <ToastContainer
+        position="top-center"
+        autoClose={2000}
+        hideProgressBar={true}
+        newestOnTop
+        closeOnClick
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 }

@@ -189,4 +189,26 @@ const acceptOrder = asyncExe(async (req, res) => {
   res.status(200).json(new ApiResponse(200, order, "order update success"));
 });
 
-export { placeOrder, getStoreOrders, getUserOrders, acceptOrder };
+const cancelOrder = asyncExe(async (req, res) => {
+  const orderID = req.body.orderID;
+  if (!orderID) {
+    throw new ApiError(400, "order ID required");
+  }
+  const order = await Order.findOneAndUpdate(
+    {
+      orderID,
+      buyer: req.user._id,
+      status: { $nin: ["delivered", "cancelled", "returned"] },
+    },
+    { $set: { status: "cancelled" } },
+    { new: true }
+  );
+  if (!order) {
+    throw new ApiError(400, "Order cannot be cancelled");
+  }
+  res
+    .status(200)
+    .json(new ApiResponse(200, order, "Order cancelled successfully"));
+});
+
+export { placeOrder, getStoreOrders, getUserOrders, acceptOrder, cancelOrder };

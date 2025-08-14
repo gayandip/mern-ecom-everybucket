@@ -5,6 +5,7 @@ const AddressForm = ({ onSubmit, loading, error, initial = {} }) => {
     name: initial.name || "",
     phone: initial.phone || "",
     city: initial.city || "",
+    state: initial.state || "",
     street: initial.street || "",
     landmark: initial.landmark || "",
     pincode: initial.pincode || "",
@@ -66,6 +67,20 @@ const AddressForm = ({ onSubmit, loading, error, initial = {} }) => {
           name="city"
           className="w-full px-4 py-2 border rounded-lg"
           value={form.city}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block mb-2 font-semibold" htmlFor="state">
+          State
+        </label>
+        <input
+          type="text"
+          id="state"
+          name="state"
+          className="w-full px-4 py-2 border rounded-lg"
+          value={form.state}
           onChange={handleChange}
           required
         />

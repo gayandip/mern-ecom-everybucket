@@ -6,29 +6,33 @@ const Account = () => {
   const user = {
     name: userData?.name || "",
     email: userData?.email || "",
-    phone: userData?.phone || "",
+    phone: userData?.phoneNumber || "",
   };
 
   const options = [
     {
       to: "/user/orders",
       text: "My Orders",
-      bg: "green",
+      bg: "bg-green-100",
+      hover: "hover:bg-green-200",
     },
     {
       to: "/user/account",
       text: "Edit Profile",
-      bg: "blue",
+      bg: "bg-blue-100",
+      hover: "hover:bg-blue-200",
     },
     {
       to: "/user/address",
       text: "Manage Address",
-      bg: "yellow",
+      bg: "bg-yellow-100",
+      hover: "hover:bg-yellow-200",
     },
     {
-      to: "/user/settings",
+      to: "/user/account",
       text: "Account Settings",
-      bg: "gray",
+      bg: "bg-gray-100",
+      hover: "hover:bg-gray-200",
     },
   ];
 
@@ -45,9 +49,9 @@ const Account = () => {
       <div className="grid grid-cols-2 gap-6 mt-8">
         {options.map((opt) => (
           <Link
-            key={opt.to}
+            key={opt.text}
             to={opt.to}
-            className={`bg-${opt.bg}-100 p-4 rounded-lg shadow hover:bg-${opt.bg}-200 text-center font-semibold`}
+            className={`${opt.bg} p-4 rounded-lg shadow ${opt.hover} text-center font-semibold`}
           >
             {opt.text}
           </Link>

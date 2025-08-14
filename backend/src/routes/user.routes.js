@@ -15,6 +15,6 @@ userRouter.route("/login").post(loginUser);
 userRouter.route("/logout").post(verifyJWT, logoutUser);
 
 userRouter.route("/get/loggedin-user").get(verifyJWT, getCurrentUser);
-userRouter.route("/update/address").put(verifyJWT, updateAddress);
+userRouter.route("/update/address").post(verifyJWT, updateAddress);
 
 export { userRouter };

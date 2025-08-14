@@ -180,13 +180,16 @@ const getCategorizedProduct = asyncExe(async (req, res) => {
 });
 
 const getAllProducts = asyncExe(async (req, res) => {
-  let { page = 1, limit = 8, category } = req.query;
+  let { page = 1, limit = 8, category, search } = req.query;
   page = parseInt(page);
   limit = parseInt(limit);
 
   let filter = {};
   if (category) {
     filter.category = category;
+  }
+  if (search) {
+    filter.name = { $regex: search, $options: "i" };
   }
 
   const total = await Product.countDocuments(filter);

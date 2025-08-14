@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import { useApiPost } from "../hooks/useApiPost";
 import { useAppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
@@ -46,7 +47,8 @@ function Register() {
         password,
       });
       if (res && res.success) {
-        navigate("/user/login");
+        toast.success("Registration successful! Please login.");
+        navigate("/login");
       }
     } catch (err) {
       setFormError("Registration failed");

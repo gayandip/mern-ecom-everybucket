@@ -1,5 +1,4 @@
 import mongoose, { Schema } from "mongoose";
-import { cardSchema } from "./user.model";
 
 const upiSchema = new Schema(
   {
@@ -7,6 +6,26 @@ const upiSchema = new Schema(
     bankName: { type: String, required: true },
     platform: { type: String, required: true },
     nameOnBank: { type: String, required: true },
+  },
+  { _id: false }
+);
+
+const cardSchema = new Schema(
+  {
+    type: {
+      type: String,
+      enum: {
+        values: ["debit", "credit"],
+        message: "{VALUE} is not credit or debit",
+      },
+      required: true,
+    },
+    number: { type: String, required: true },
+    cvv: { type: String, required: true },
+    expiry: { type: Date, required: true },
+    name: { type: String, required: true },
+    issuer: { type: String, required: true },
+    serviceProvider: { type: String, required: true },
   },
   { _id: false }
 );

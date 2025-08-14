@@ -10,8 +10,11 @@ const ContextProvider = ({ children }) => {
   const [login, setLogin] = useState(false);
   const [userData, setUserData] = useState({});
   const [loading, setLoading] = useState(true);
+  // Global search/category state
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [searchMode, setSearchMode] = useState("product");
 
-  // Check session on mount
   useEffect(() => {
     async function checkSession() {
       setLoading(true);
@@ -40,6 +43,12 @@ const ContextProvider = ({ children }) => {
     userData,
     setUserData,
     loading,
+    search,
+    setSearch,
+    category,
+    setCategory,
+    searchMode,
+    setSearchMode,
   };
 
   return <AppContext.Provider value={values}>{children}</AppContext.Provider>;

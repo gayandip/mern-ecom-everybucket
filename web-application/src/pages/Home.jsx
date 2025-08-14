@@ -1,9 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 import ProductCard from "../components/ProductCard";
 import Search from "../components/Search";
 import { useApiGet } from "../hooks/useApiGet";
 
 function Home() {
+  const navigate = useNavigate();
+  const { search, setSearch, setCategory, setSearchMode } = useAppContext();
   const categories = [
     { name: "Fruits", image: "categories/cat-fruits.png" },
     { name: "Vegetables", image: "categories/cat-vegetables.png" },
@@ -19,6 +22,20 @@ function Home() {
 
   const { data, loading, error } = useApiGet("/products/get/new-arrivals");
   const newArrivals = data?.data.products || [];
+
+  // Handler for search from Home
+  const handleHomeSearch = (query) => {
+    setSearch(query);
+    setSearchMode("product");
+    navigate("/products");
+  };
+
+  // Handler for category click
+  const handleCategoryClick = (catName) => {
+    setSearch(catName);
+    setSearchMode("category");
+    navigate("/products");
+  };
 
   return (
     <>
@@ -53,10 +70,10 @@ function Home() {
           style={{ minWidth: "300px" }}
         >
           {categories.map((cat) => (
-            <Link
+            <div
               key={cat.name}
-              to={`/products?category=${cat.name.toLowerCase()}`}
               className="min-w-[140px] bg-green-200 rounded-lg shadow-md flex flex-col items-center p-3 hover:scale-105 transition-transform cursor-pointer"
+              onClick={() => handleCategoryClick(cat.name)}
             >
               <img
                 src={cat.image}
@@ -66,7 +83,7 @@ function Home() {
               <span className="font-semibold text-md text-center">
                 {cat.name}
               </span>
-            </Link>
+            </div>
           ))}
         </div>
       </div>

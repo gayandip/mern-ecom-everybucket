@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import { useAppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import { useApiPost } from "../hooks/useApiPost";
@@ -29,11 +30,16 @@ function Login() {
     try {
       const res = await post("/users/login", { uniqueID, password });
       if (res && res.success) {
+        toast.success("Login successful!");
         setLogin(true);
-        setUserData(res.user || {});
+        setUserData(res.data.loggedinUser || {});
         navigate("/");
       } else if (res && res.message) {
         setError(res.message);
+      } else if (apiError) {
+        toast.error("Invalid credentials");
+      } else {
+        toast.error(apiError?.message);
       }
     } catch (err) {
       setError("Login failed");
@@ -49,11 +55,7 @@ function Login() {
         <h2 className="text-2xl font-bold mb-6 text-center text-green-600">
           Login
         </h2>
-        {(error || apiError) && (
-          <div className="mb-4 text-red-500 text-center">
-            {error || apiError}
-          </div>
-        )}
+        {error && <div className="mb-4 text-red-500 text-center">{error}</div>}
         {data && data.success && (
           <div className="mb-4 text-green-600 text-center">
             Login successful!

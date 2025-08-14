@@ -7,49 +7,40 @@ import StoreDetailsModal from "../components/StoreDetailsModal";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "");
 function getImageUrl(img) {
   if (!img) return "";
-  if (/^https?:\/\//.test(img)) return img;
-  // Remove leading slash if present
   const path = img.startsWith("/") ? img : "/" + img;
-  // Remove /api/v1 if present in BACKEND_URL
-  const base = BACKEND_URL.replace(/\/api\/v1$/, "");
-  return base + path;
+  return BACKEND_URL + path;
 }
 
 const ProductDetails = () => {
   const { id } = useParams();
-  const { data: product, loading, error } = useApiGet(`/api/product/get/${id}`);
+  const { data, loading, error } = useApiGet(`/products/get/${id}`);
   const [mainImg, setMainImg] = useState("");
   const [showStoreModal, setShowStoreModal] = useState(false);
   const [storeId, setStoreId] = useState(null);
-  const [storeData, setStoreData] = useState(null);
-  const [storeLoading, setStoreLoading] = useState(false);
-  const [storeError, setStoreError] = useState(null);
+  const [showStoreFetch, setShowStoreFetch] = useState(false);
+  const {
+    data: storeData,
+    loading: storeLoading,
+    error: storeError,
+  } = useApiGet(
+    showStoreFetch && storeId ? `/stores/get/details/${storeId}` : null
+  );
 
   useEffect(() => {
-    if (product && product.images && product.images.length > 0) {
-      setMainImg(product.images[0]);
+    if (data?.data && data.data.images && data.data.images.length > 0) {
+      setMainImg(data.data.images[0]);
     }
-  }, [product]);
+  }, [data]);
 
-  const handleViewStore = async () => {
-    if (!product || !product.owner) return;
-    setStoreLoading(true);
-    setStoreError(null);
+  const handleViewStore = () => {
+    if (!data?.data || !data.data.owner) return;
+    setStoreId(data.data.owner);
     setShowStoreModal(true);
-    try {
-      const res = await fetch(`/api/store/get/details/${product.owner}`);
-      if (!res.ok) throw new Error("Failed to fetch store details");
-      const data = await res.json();
-      setStoreData(data);
-    } catch (err) {
-      setStoreError(err.message);
-    } finally {
-      setStoreLoading(false);
-    }
+    setShowStoreFetch(true);
   };
 
   if (loading) return <div>Loading...</div>;
-  if (error || !product)
+  if (error || !data?.data)
     return <Error message="Oops! product not found" statusCode={404} />;
 
   return (
@@ -57,18 +48,20 @@ const ProductDetails = () => {
       <div className="flex flex-col md:flex-row gap-8">
         {/* Image Gallery */}
         <div className="flex flex-col items-center md:w-1/2">
-          <img
-            src={getImageUrl(mainImg)}
-            alt={product.name}
-            className="w-64 h-64 object-cover rounded mb-4 border"
-          />
+          {mainImg ? (
+            <img
+              src={getImageUrl(mainImg)}
+              alt={data.data.name}
+              className="w-64 h-64 object-cover rounded mb-4 border"
+            />
+          ) : null}
           <div className="flex gap-2">
-            {product.images &&
-              product.images.map((img, idx) => (
+            {data.data.images &&
+              data.data.images.map((img, idx) => (
                 <img
                   key={idx}
                   src={getImageUrl(img)}
-                  alt={product.name + " " + (idx + 1)}
+                  alt={data.data.name + " " + (idx + 1)}
                   className={`w-16 h-16 object-cover rounded cursor-pointer border-2 ${
                     mainImg === img ? "border-blue-500" : "border-transparent"
                   }`}
@@ -80,31 +73,31 @@ const ProductDetails = () => {
         {/* Product Info */}
         <div className="flex-1 flex flex-col gap-4">
           <div>
-            <h2 className="text-2xl font-bold mb-2">{product.name}</h2>
-            <div className="text-gray-700 mb-2">{product.description}</div>
+            <h2 className="text-2xl font-bold mb-2">{data.data.name}</h2>
+            <div className="text-gray-700 mb-2">{data.data.description}</div>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-gray-400 line-through">
-                ₹{product.priceInfo?.mrp}
+                ₹{data.data.priceInfo?.mrp}
               </span>
               <span className="text-blue-700 text-xl font-bold">
-                ₹{product.priceInfo?.sellingPrice}
+                ₹{data.data.priceInfo?.sellingPrice}
               </span>
             </div>
             <div className="text-gray-700 mb-2">
-              Category: {product.category}
+              Category: {data.data.category}
             </div>
             <div className="text-gray-700 mb-2">
-              Warranty: {product.warranty}
+              Warranty: {data.data.warranty}
             </div>
-            {product.otherDetails && product.otherDetails.length > 0 && (
+            {data.data.otherDetails && data.data.otherDetails.length > 0 && (
               <ul className="list-disc ml-6 text-gray-700 mb-2">
-                {product.otherDetails.map((d, i) => (
+                {data.data.otherDetails.map((d, i) => (
                   <li key={i}>{d}</li>
                 ))}
               </ul>
             )}
             <Link
-              to={`/order/${product._id}`}
+              to={`/order/${data.data._id}`}
               className="btn-green px-6 py-2 font-semibold rounded text-lg mr-4"
             >
               Buy Now
@@ -120,27 +113,41 @@ const ProductDetails = () => {
       </div>
       {/* Store Details Modal */}
       {showStoreModal && (
-        <StoreDetailsModal
-          store={storeData}
-          onClose={() => {
-            setShowStoreModal(false);
-            setStoreData(null);
-          }}
-        />
+        <>
+          {/* Overlay */}
+          <div className="fixed inset-0 bg-white bg-opacity-60 z-40" />
+          {/* Modal */}
+          <div className="fixed inset-0 flex items-center justify-center z-50">
+            <StoreDetailsModal
+              store={storeData}
+              onClose={() => {
+                setShowStoreModal(false);
+                setStoreId(null);
+                setShowStoreFetch(false);
+              }}
+            />
+          </div>
+        </>
       )}
       {storeLoading && showStoreModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded shadow">
-            Loading store details...
+        <>
+          <div className="fixed inset-0 bg-blue-300 bg-opacity-40 z-40" />
+          <div className="fixed inset-0 flex items-center justify-center z-50">
+            <div className="bg-white p-4 rounded shadow">
+              Loading store details...
+            </div>
           </div>
-        </div>
+        </>
       )}
       {storeError && showStoreModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded shadow text-red-500">
-            {storeError}
+        <>
+          <div className="fixed inset-0 bg-white bg-opacity-60 z-40" />
+          <div className="fixed inset-0 flex items-center justify-center z-50">
+            <div className="bg-white p-4 rounded shadow text-red-500">
+              {storeError}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

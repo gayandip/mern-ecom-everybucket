@@ -2,37 +2,15 @@ import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-const cardSchema = new Schema(
-  {
-    type: {
-      type: String,
-      enum: {
-        values: ["debit", "credit"],
-        message: "{VALUE} is not credit or debit",
-      },
-      required: true,
-    },
-    number: { type: String, required: true },
-    cvv: { type: String, required: true },
-    expiry: { type: Date, required: true },
-    name: { type: String, required: true },
-    issuer: { type: String, required: true },
-    serviceProvider: { type: String, required: true },
-  },
-  { _id: false }
-);
-
 const addressSchema = new Schema(
   {
     name: { type: String, required: true },
     phone: { type: String, required: true },
-    alternatePhone: String,
     pincode: { type: Number, required: true },
     city: { type: String, required: true },
     street: { type: String, required: true },
     landmark: { type: String, required: true },
     state: { type: String, required: true },
-    houseNo: String,
   },
   { _id: false }
 );
@@ -67,10 +45,6 @@ const userSchema = new Schema(
       required: [true, "password required"],
     },
     address: addressSchema,
-    paymentDetails: {
-      cardDetails: cardSchema,
-      upiAddress: String,
-    },
     stores: [store],
   },
 
@@ -104,4 +78,4 @@ userSchema.methods.generateAccessToken = function () {
 
 const User = mongoose.model("User", userSchema);
 
-export { User, addressSchema, cardSchema };
+export { User, addressSchema };

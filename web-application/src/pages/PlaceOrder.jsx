@@ -21,7 +21,7 @@ const PlaceOrder = () => {
     data: product,
     loading: productLoading,
     error: productError,
-  } = useApiGet(`/api/product/get/${id}`);
+  } = useApiGet(`/products/get/${id}`);
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,7 +63,7 @@ const PlaceOrder = () => {
         seller: product.owner,
         address: userData.address,
       };
-      const res = await post("/order/place-order", orderBody);
+      const res = await post("/orders/place-order", orderBody);
       if (!res) throw new Error("Order failed");
       setSuccess(true);
     } catch (err) {
