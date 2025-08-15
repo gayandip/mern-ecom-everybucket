@@ -1,6 +1,6 @@
 const StoreDetailsModal = ({ store, onClose }) => {
   if (!store) return null;
-  const s = store.data || store;
+  const s = store.data;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px] max-w-[90vw] relative">
@@ -22,6 +22,9 @@ const StoreDetailsModal = ({ store, onClose }) => {
         </div>
         <div className="mb-2">
           <span className="font-semibold">Phone:</span> {s.contact?.phone}
+        </div>
+        <div className="mb-2">
+          <span className="font-semibold">Email:</span> {s.contact?.email}
         </div>
         <div className="mb-2">
           <span className="font-semibold">Address:</span> {s.contact?.address}

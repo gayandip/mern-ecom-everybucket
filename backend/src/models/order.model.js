@@ -14,7 +14,6 @@ const ProductSchema = new Schema(
     },
     name: { type: String, required: true },
     price: { type: Number, required: true },
-    delivery: { type: Boolean, required: true },
   },
   { _id: false }
 );
@@ -30,14 +29,6 @@ const orderSchema = new Schema(
       sumTotal: { type: Number, required: true },
       others: { type: Number, required: true },
       grandTotal: { type: Number, required: true },
-    },
-    payment: {
-      status: {
-        type: String,
-        enum: ["Paid", "Due"],
-        default: "Due",
-      },
-      paymentID: { type: Schema.Types.ObjectId, ref: "Payment" },
     },
     product: ProductSchema,
     address: addressSchema,

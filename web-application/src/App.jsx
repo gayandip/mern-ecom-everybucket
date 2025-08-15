@@ -29,9 +29,9 @@ const userRoutes = [
 
 const sellerRoutes = [
   { path: "my-store", element: <Dashboard /> },
-  { path: "my-products", element: <MyStoreProducts /> },
-  { path: "my-orders", element: <StoreOrders /> },
-  { path: "list-new-product", element: <ListProduct /> },
+  { path: "my-products/:storeId", element: <MyStoreProducts /> },
+  { path: "my-orders/:storeId", element: <StoreOrders /> },
+  { path: "list-new-product/:storeId", element: <ListProduct /> },
 ];
 
 function App() {

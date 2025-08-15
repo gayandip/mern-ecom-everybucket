@@ -9,6 +9,16 @@ const Orders = () => {
     "/orders/get/user-orders?" + refresh
   );
   const { post: cancelPost, loading: cancelLoading } = useApiPost();
+  const { post: finalizePost, loading: finalizeLoading } = useApiPost();
+  const handleFinalize = async (orderID) => {
+    const res = await finalizePost("/orders/finalize-order", { orderID });
+    if (res && res.success) {
+      toast.success("Order finalized and moved to processing");
+      setRefresh((r) => r + 1);
+    } else {
+      toast.error(res?.message || "Failed to finalize order");
+    }
+  };
   const orders = data?.data || [];
 
   const handleCancel = async (orderID) => {
@@ -82,7 +92,12 @@ const Orders = () => {
                   className={`px-3 py-1 rounded-full text-xs font-semibold ${
                     order.status === "delivered"
                       ? "bg-green-100 text-green-700"
-                      : order.status === "shipped"
+                      : order.status === "waiting-to-accept"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : order.status === "accepted"
+                      ? "bg-lime-100 text-lime-700"
+                      : order.status === "processing" ||
+                        order.status === "processed"
                       ? "bg-blue-100 text-blue-700"
                       : order.status === "cancelled"
                       ? "bg-red-100 text-red-700"
@@ -94,13 +109,24 @@ const Orders = () => {
                 {!["delivered", "cancelled", "returned"].includes(
                   order.status
                 ) && (
-                  <button
-                    className="ml-2 px-3 py-1 rounded bg-red-500 text-white text-sm font-semibold hover:bg-red-600 disabled:opacity-60"
-                    onClick={() => handleCancel(order.orderID)}
-                    disabled={cancelLoading}
-                  >
-                    {cancelLoading ? "Cancelling..." : "Cancel"}
-                  </button>
+                  <div className="flex items-center justify-around">
+                    {order.status === "accepted" && (
+                      <button
+                        className="ml-2 px-3 py-1 rounded bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600 disabled:opacity-60"
+                        onClick={() => handleFinalize(order.orderID)}
+                        disabled={finalizeLoading}
+                      >
+                        {finalizeLoading ? "Finalizing..." : "Finalize"}
+                      </button>
+                    )}
+                    <button
+                      className="ml-2 px-3 py-1 rounded bg-red-500 text-white text-sm font-semibold hover:bg-red-600 disabled:opacity-60"
+                      onClick={() => handleCancel(order.orderID)}
+                      disabled={cancelLoading}
+                    >
+                      {cancelLoading ? "Cancelling..." : "Cancel"}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

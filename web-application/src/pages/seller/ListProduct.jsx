@@ -1,18 +1,22 @@
-import React from "react";
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useApiPost } from "../../hooks/useApiPost";
 
 const ListProduct = () => {
-  const [form, setForm] = React.useState({
+  const [form, setForm] = useState({
     name: "",
-    price: "",
-    category: "",
-    customCategory: "",
-    stock: "",
     description: "",
+    stocks: "",
+    mrp: "",
+    sellingPrice: "",
+    category: "",
+    otherDetails: "",
+    warranty: "",
     images: [null, null, null],
   });
-  const [error, setError] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
-  const [imagePreviews, setImagePreviews] = React.useState([null, null, null]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [imagePreviews, setImagePreviews] = useState([null, null, null]);
 
   const handleSingleImageChange = (idx, e) => {
     const file = e.target.files[0] || null;
@@ -33,30 +37,67 @@ const ListProduct = () => {
     setForm({ ...form, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const { storeId } = useParams();
+  const navigate = useNavigate();
+  const { post, loading: postLoading, error: postError } = useApiPost();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    setTimeout(() => {
+
+    if (
+      !form.name ||
+      !form.description ||
+      !form.stocks ||
+      !form.mrp ||
+      !form.sellingPrice ||
+      !form.category
+    ) {
+      setError("Please fill all required fields.");
       setLoading(false);
-      if (!form.name || !form.price || !form.category || !form.stock) {
-        setError("Please fill all required fields.");
-      } else {
-        alert("Product listed successfully!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", form.name);
+    formData.append("description", form.description);
+    formData.append("stocks", form.stocks);
+    formData.append("mrp", form.mrp);
+    formData.append("sellingPrice", form.sellingPrice);
+    formData.append("category", form.category.trim().toLowerCase());
+    formData.append("otherDetails", form.otherDetails);
+    formData.append("warranty", form.warranty);
+    form.images.filter(Boolean).forEach((image) => {
+      formData.append("images", image);
+    });
+
+    try {
+      const res = await post(`/products/add-new/${storeId}`, formData);
+      if (res && res.message) {
+        alert(res.message);
         setForm({
           name: "",
-          price: "",
-          category: "",
-          customCategory: "",
-          stock: "",
           description: "",
+          stocks: "",
+          mrp: "",
+          sellingPrice: "",
+          category: "",
+          otherDetails: "",
+          warranty: "",
           images: [null, null, null],
         });
         setImagePreviews([null, null, null]);
+        navigate(-1);
+      } else {
+        setError(postError?.response?.data?.message || "Error listing product");
       }
-    }, 1200);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Error listing product");
+    } finally {
+      setLoading(false);
+    }
   };
-
   return (
     <div className="">
       <h2 className="text-2xl font-bold m-4 text-center text-green-700">
@@ -142,69 +183,6 @@ const ListProduct = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="block mb-2 font-semibold" htmlFor="price">
-              Price (₹)
-            </label>
-            <input
-              type="number"
-              id="price"
-              name="price"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
-              value={form.price}
-              onChange={handleChange}
-              required
-              min="0"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block mb-2 font-semibold" htmlFor="category">
-              Category
-            </label>
-            <select
-              id="category"
-              name="category"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
-              value={form.category}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select Category</option>
-              <option>Electronics</option>
-              <option>Mobiles</option>
-              <option>Accessories</option>
-              <option>Fashion</option>
-              <option>Home</option>
-              <option>Grocery</option>
-              <option>Others</option>
-            </select>
-            {form.category === "Others" && (
-              <input
-                type="text"
-                name="customCategory"
-                placeholder="Enter custom category"
-                className="mt-2 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
-                value={form.customCategory}
-                onChange={handleChange}
-                required
-              />
-            )}
-          </div>
-          <div className="mb-4">
-            <label className="block mb-2 font-semibold" htmlFor="stock">
-              Stock
-            </label>
-            <input
-              type="number"
-              id="stock"
-              name="stock"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
-              value={form.stock}
-              onChange={handleChange}
-              required
-              min="0"
-            />
-          </div>
-          <div className="mb-4">
             <label className="block mb-2 font-semibold" htmlFor="description">
               Description
             </label>
@@ -215,6 +193,94 @@ const ListProduct = () => {
               value={form.description}
               onChange={handleChange}
               rows={3}
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block mb-2 font-semibold" htmlFor="stocks">
+              Stock
+            </label>
+            <input
+              type="number"
+              id="stocks"
+              name="stocks"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
+              value={form.stocks}
+              onChange={handleChange}
+              required
+              min="0"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block mb-2 font-semibold" htmlFor="mrp">
+              MRP (₹)
+            </label>
+            <input
+              type="number"
+              id="mrp"
+              name="mrp"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
+              value={form.mrp}
+              onChange={handleChange}
+              required
+              min="0"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block mb-2 font-semibold" htmlFor="sellingPrice">
+              Selling Price (₹)
+            </label>
+            <input
+              type="number"
+              id="sellingPrice"
+              name="sellingPrice"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
+              value={form.sellingPrice}
+              onChange={handleChange}
+              required
+              min="0"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block mb-2 font-semibold" htmlFor="category">
+              Category
+            </label>
+            <input
+              type="text"
+              id="category"
+              name="category"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
+              value={form.category}
+              onChange={handleChange}
+              required
+              placeholder="e.g. Electronics, Grocery, Fashion"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block mb-2 font-semibold" htmlFor="otherDetails">
+              Other Details
+            </label>
+            <input
+              type="text"
+              id="otherDetails"
+              name="otherDetails"
+              placeholder="e.g. blue, nice"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
+              value={form.otherDetails}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block mb-2 font-semibold" htmlFor="warranty">
+              Warranty
+            </label>
+            <input
+              type="text"
+              id="warranty"
+              name="warranty"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
+              value={form.warranty}
+              onChange={handleChange}
             />
           </div>
           <button

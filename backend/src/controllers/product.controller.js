@@ -33,8 +33,6 @@ const verifyToListProduct = asyncExe(async (req, res, next) => {
     stocks,
     mrp,
     sellingPrice,
-    dvOption,
-    dvCost,
     category,
     otherDetails,
     warranty,
@@ -47,8 +45,6 @@ const verifyToListProduct = asyncExe(async (req, res, next) => {
       stocks,
       mrp,
       sellingPrice,
-      dvOption,
-      dvCost,
       category,
       warranty,
       otherDetails,
@@ -74,8 +70,6 @@ const listNewProduct = asyncExe(async (req, res) => {
     stocks,
     mrp,
     sellingPrice,
-    dvOption,
-    dvCost,
     category,
     otherDetails,
     warranty,
@@ -86,7 +80,7 @@ const listNewProduct = asyncExe(async (req, res) => {
   const details = otherDetails.split(",");
 
   const existingProduct = await Product.findOne({
-    $and: [{ name }, { owner: store._id }, { category }],
+    $and: [{ name }, { owner: store._id }],
   });
   if (existingProduct) {
     images.map((file) => unlinkFile(file.path));
@@ -99,7 +93,6 @@ const listNewProduct = asyncExe(async (req, res) => {
     stocks,
     images: imageUrls,
     priceInfo: { mrp, sellingPrice },
-    delivery: { option: dvOption, cost: dvCost },
     owner: store._id,
     category,
     otherDetails: details,
@@ -111,15 +104,15 @@ const listNewProduct = asyncExe(async (req, res) => {
     throw new ApiError(500, "error creating product");
   }
 
-  const productCategory = await Category.create({
-    name: category,
-    product: product._id,
-  });
-  if (!productCategory) {
-    await Product.findByIdAndDelete(product._id);
-    images.map((file) => unlinkFile(file.path));
-    throw new ApiError(500, "error creating category");
-  }
+  // const productCategory = await Category.create({
+  //   name: category,
+  //   product: product._id,
+  // });
+  // if (!productCategory) {
+  //   await Product.findByIdAndDelete(product._id);
+  //   images.map((file) => unlinkFile(file.path));
+  //   throw new ApiError(500, "error creating category");
+  // }
 
   const updatedStore = await Seller.findByIdAndUpdate(
     store._id,
@@ -184,7 +177,7 @@ const getAllProducts = asyncExe(async (req, res) => {
   page = parseInt(page);
   limit = parseInt(limit);
 
-  let filter = {};
+  let filter = { stocks: { $gt: 0 } };
   if (category) {
     filter.category = category;
   }
@@ -216,7 +209,7 @@ const getNewArrivals = asyncExe(async (req, res) => {
   let { limit = 4 } = req.query;
   limit = parseInt(limit);
 
-  const products = await Product.find()
+  const products = await Product.find({ stocks: { $gt: 0 } })
     .sort({ createdAt: -1 })
     .limit(limit)
     .exec();
@@ -228,38 +221,6 @@ const getNewArrivals = asyncExe(async (req, res) => {
     );
 });
 
-// Get stats for a store by store id
-const getStoreStats = asyncExe(async (req, res) => {
-  const storeID = req.params.id;
-  if (!storeID) {
-    throw new ApiError(400, "store id required");
-  }
-  // Count products
-  const productsCount = await Product.countDocuments({ owner: storeID });
-  // Count orders and revenue (assuming you have an Order model)
-  let ordersCount = 0;
-  let revenue = 0;
-  try {
-    const { Order } = await import("../models/order.model.js");
-    const orders = await Order.find({ store: storeID });
-    ordersCount = orders.length;
-    revenue = orders.reduce((sum, o) => sum + (o.price?.grandTotal || 0), 0);
-  } catch (e) {
-    // If Order model or data not available, skip
-  }
-  res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        products: productsCount,
-        orders: ordersCount,
-        revenue,
-      },
-      "store stats fetched successfully"
-    )
-  );
-});
-
 export {
   listNewProduct,
   getAllProductsFromStore,
@@ -267,6 +228,5 @@ export {
   getCategorizedProduct,
   getAllProducts,
   getNewArrivals,
-  getStoreStats,
   verifyToListProduct,
 };

@@ -3,13 +3,7 @@ import Error from "./Error";
 import { useState, useEffect } from "react";
 import { useApiGet } from "../hooks/useApiGet";
 import StoreDetailsModal from "../components/StoreDetailsModal";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "");
-function getImageUrl(img) {
-  if (!img) return "";
-  const path = img.startsWith("/") ? img : "/" + img;
-  return BACKEND_URL + path;
-}
+import { getImageUrl } from "../context/AppContext";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -96,12 +90,22 @@ const ProductDetails = () => {
                 ))}
               </ul>
             )}
-            <Link
-              to={`/order/${data.data._id}`}
-              className="btn-green px-6 py-2 font-semibold rounded text-lg mr-4"
-            >
-              Buy Now
-            </Link>
+            {data.data.stocks > 0 ? (
+              <Link
+                to={`/order/${data.data._id}`}
+                className="btn-green px-6 py-2 font-semibold rounded text-lg mr-4"
+              >
+                Buy Now
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="btn-green px-6 py-2 font-semibold rounded text-lg mr-4 opacity-60 cursor-not-allowed"
+                disabled
+              >
+                Out of Stock
+              </button>
+            )}
             <button
               className="btn-blue px-6 py-2 font-semibold rounded text-lg"
               onClick={handleViewStore}

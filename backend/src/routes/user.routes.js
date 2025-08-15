@@ -13,7 +13,6 @@ const userRouter = Router();
 userRouter.route("/register").post(registerUser);
 userRouter.route("/login").post(loginUser);
 userRouter.route("/logout").post(verifyJWT, logoutUser);
-
 userRouter.route("/get/loggedin-user").get(verifyJWT, getCurrentUser);
 userRouter.route("/update/address").post(verifyJWT, updateAddress);
 

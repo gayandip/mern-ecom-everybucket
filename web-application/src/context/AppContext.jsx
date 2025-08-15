@@ -15,26 +15,27 @@ const ContextProvider = ({ children }) => {
   const [category, setCategory] = useState("");
   const [searchMode, setSearchMode] = useState("product");
 
-  useEffect(() => {
-    async function checkSession() {
-      setLoading(true);
-      try {
-        const res = await axios.get("/users/get/loggedin-user");
-        if (res.data && res.data.data) {
-          setLogin(true);
-          setUserData(res.data.data);
-        } else {
-          setLogin(false);
-          setUserData({});
-        }
-      } catch {
+  // Fetch user data (can be called to refresh after updates)
+  const refreshUserData = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get("/users/get/loggedin-user");
+      if (res.data && res.data.data) {
+        setLogin(true);
+        setUserData(res.data.data);
+      } else {
         setLogin(false);
         setUserData({});
-      } finally {
-        setLoading(false);
       }
+    } catch {
+      setLogin(false);
+      setUserData({});
+    } finally {
+      setLoading(false);
     }
-    checkSession();
+  };
+  useEffect(() => {
+    refreshUserData();
   }, []);
 
   const values = {
@@ -49,6 +50,7 @@ const ContextProvider = ({ children }) => {
     setCategory,
     searchMode,
     setSearchMode,
+    refreshUserData,
   };
 
   return <AppContext.Provider value={values}>{children}</AppContext.Provider>;
@@ -56,4 +58,14 @@ const ContextProvider = ({ children }) => {
 
 const useAppContext = () => useContext(AppContext);
 
-export { AppContext, ContextProvider, useAppContext };
+function getImageUrl(img) {
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL?.replace(
+    /\/$/,
+    ""
+  ).replace(/\/api\/v1/, "");
+  if (!img) return "";
+  const path = img.startsWith("/") ? img : "/" + img;
+  return BACKEND_URL + path;
+}
+
+export { AppContext, ContextProvider, useAppContext, getImageUrl };

@@ -1,19 +1,19 @@
-import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { getImageUrl } from "../context/AppContext";
 
 function ProductCard({ img, title, priceInfo, id }) {
   const navigate = useNavigate();
   const handleBuyNow = (e) => {
-    e.preventDefault(); // Prevent parent Link navigation
+    e.preventDefault();
     navigate(`/order/${id}`);
   };
   return (
     <Link
       to={`/product/${id}`}
-      className="bg-indigo-100 text-center rounded-lg shadow-md p-4 flex flex-col items-center border-2 border-gray-200 hover:shadow-xl transition-shadow"
+      className="bg-blue-50 text-center rounded-lg shadow-md p-4 flex flex-col items-center border-2 border-gray-200 hover:shadow-xl transition-shadow"
     >
       <img
-        src={img}
+        src={getImageUrl(img)}
         alt="item"
         className="w-24 h-24 object-cover mb-2 rounded"
       />

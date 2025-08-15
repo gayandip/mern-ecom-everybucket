@@ -3,15 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useApiGet } from "../hooks/useApiGet";
 import { useAppContext } from "../context/AppContext";
 import { useApiPost } from "../hooks/useApiPost";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "");
-function getImageUrl(img) {
-  if (!img) return "";
-  if (/^https?:\/\//.test(img)) return img;
-  const path = img.startsWith("/") ? img : "/" + img;
-  const base = BACKEND_URL.replace(/\/api\/v1$/, "");
-  return base + path;
-}
+import { getImageUrl } from "../context/AppContext";
 
 const PlaceOrder = () => {
   const { id } = useParams();
@@ -29,56 +21,51 @@ const PlaceOrder = () => {
   const { post, loading: postLoading, error: postError } = useApiPost();
 
   useEffect(() => {
-    if (product && product.stocks > 0) {
+    if (product?.data && product.data.stocks > 0) {
       setQuantity(1);
     }
   }, [product]);
 
   useEffect(() => {
-    if (userData && !userData.address) {
-      navigate("/user/add-address", { state: { from: `/order/${id}` } });
+    if (postError) {
+      setError(postError?.response?.data?.message || "Something went wrong");
     }
-  }, [userData, navigate, id]);
+  }, [postError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess(false);
     if (!userData || !userData.address) {
-      navigate("/user/add-address", { state: { from: `/order/${id}` } });
+      navigate("/user/address", { state: { from: `/order/${id}` } });
       return;
     }
-    if (!product || !product._id) {
+    if (!product?.data || !product.data._id) {
       setError("Product not found");
       return;
     }
     setLoading(true);
-    try {
-      const orderBody = {
-        product: {
-          id: product._id,
-          quantity: Number(quantity),
-          delivery: true,
-        },
-        seller: product.owner,
-        address: userData.address,
-      };
-      const res = await post("/orders/place-order", orderBody);
-      if (!res) throw new Error("Order failed");
+    const orderBody = {
+      product: {
+        id: product.data._id,
+        quantity: Number(quantity),
+      },
+      seller: product.data.owner,
+    };
+    const res = await post("/orders/place-order", orderBody);
+    setLoading(false);
+    if (res && !res.error) {
       setSuccess(true);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      navigate("/user/orders", { replace: true });
     }
   };
 
   if (productLoading) return <div>Loading...</div>;
-  if (productError || !product)
+  if (productError || !product?.data)
     return <div className="text-red-500">Product not found</div>;
 
   // Calculate prices
-  const subtotal = (product.priceInfo?.sellingPrice || 0) * quantity;
+  const subtotal = (product.data.priceInfo?.sellingPrice || 0) * quantity;
   const others = 0; // You can add delivery/other costs if needed
   const total = subtotal + others;
 
@@ -87,40 +74,56 @@ const PlaceOrder = () => {
       {/* Order/Product Summary */}
       <div className="bg-white max-w-md max-h-fit rounded-lg p-6 flex-1 flex flex-col justify-between md:mb-0 border-1 border-b-green-800">
         <h3 className="text-xl font-bold mb-4 text-green-700">Order Summary</h3>
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex justify-between gap-4 mb-4">
           <img
-            src={getImageUrl(product.images?.[0])}
-            alt={product.name}
+            src={getImageUrl(product.data.images?.[0])}
+            alt={product.data.name}
             className="w-20 h-20 object-cover rounded"
           />
-          <div>
-            <div className="font-semibold">{product.name}</div>
-            <div className="text-gray-600 text-sm">
-              Qty:
-              <input
-                type="number"
-                min={1}
-                max={product.stocks}
-                value={quantity}
-                onChange={(e) =>
-                  setQuantity(
-                    Math.max(
-                      1,
-                      Math.min(product.stocks, Number(e.target.value))
-                    )
-                  )
-                }
-                className="w-16 ml-2 px-2 py-1 border rounded"
-                style={{ width: 60 }}
-              />
-              <span className="ml-2 text-xs text-gray-400">
-                (In stock: {product.stocks})
-              </span>
-            </div>
+          <div className="flex items-start flex-col">
+            <div className="font-semibold">{product.data.name}</div>
+
             <div className="text-blue-700 font-bold">
-              ₹{product.priceInfo?.sellingPrice}
+              ₹{product.data.priceInfo?.sellingPrice}
             </div>
           </div>
+        </div>
+        <div className="text-gray-600 text-sm flex items-center mb-6 justify-center gap-2">
+          Qty:
+          <button
+            type="button"
+            className="px-2 border rounded bg-white hover:bg-gray-100 font-extrabold text-xl"
+            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+            disabled={quantity <= 1}
+          >
+            -
+          </button>
+          <input
+            type="number"
+            min={1}
+            max={product.data.stocks}
+            value={quantity}
+            onChange={(e) =>
+              setQuantity(
+                Math.max(
+                  1,
+                  Math.min(product.data.stocks, Number(e.target.value))
+                )
+              )
+            }
+            className="w-16 px-2 py-1 border rounded text-center"
+            style={{ width: 60 }}
+          />
+          <button
+            type="button"
+            className="px-2 border rounded bg-white hover:bg-gray-100 font-extrabold text-xl"
+            onClick={() =>
+              setQuantity((q) => Math.min(product.data.stocks, q + 1))
+            }
+            disabled={quantity >= product.data.stocks}
+          >
+            +
+          </button>
         </div>
         <div className="mb-2 flex justify-between text-sm">
           <span>Subtotal</span>
@@ -138,7 +141,7 @@ const PlaceOrder = () => {
 
       {/* Address/Order Form */}
       <form
-        className="bg-white p-8 rounded-lg w-full max-w-md flex-1 border-green-700 border"
+        className="bg-white p-4 px-8 rounded-lg w-full max-w-md flex-1 border-green-700 border"
         onSubmit={handleSubmit}
       >
         <h2 className="text-2xl font-bold mb-6 text-center text-green-600">
@@ -146,8 +149,8 @@ const PlaceOrder = () => {
         </h2>
         {userData && userData.address && (
           <div className="mb-4 p-4 bg-gray-50 rounded border">
-            <div className="font-semibold">{userData.address.name}</div>
-            <div>{userData.address.phone}</div>
+            <div className="font-semibold">name: {userData.address.name}</div>
+            <div>phone: {userData.address.phone}</div>
             <div>
               {userData.address.street}, {userData.address.city}
             </div>
@@ -161,15 +164,22 @@ const PlaceOrder = () => {
             Order placed successfully!
           </div>
         )}
-        <button
-          type="submit"
-          className="btn-green w-full disabled:opacity-60"
-          disabled={loading || postLoading}
-        >
-          {loading || postLoading ? "Placing Order..." : "Place Order"}
-        </button>
-        {postError && (
-          <div className="text-red-500 text-center mt-2">{postError}</div>
+        {product.data.stocks > 0 ? (
+          <button
+            type="submit"
+            className="btn-green w-full disabled:opacity-60"
+            disabled={loading || postLoading}
+          >
+            {loading || postLoading ? "Placing Order..." : "Place Order"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn-green w-full opacity-60 cursor-not-allowed"
+            disabled
+          >
+            Out of Stock
+          </button>
         )}
       </form>
     </div>

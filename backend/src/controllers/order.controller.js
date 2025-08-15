@@ -14,16 +14,23 @@ const placeOrder = asyncExe(async (req, res) => {
   const product = req.body.product || {};
   const sellerID = req.body.seller;
 
-  if (!(product.id && product.quantity && product.delivery)) {
+  if (!(product.id && product.quantity)) {
     throw new ApiError(400, "product details required");
   }
   if (!sellerID) {
     throw new ApiError(400, "seller id required");
   }
 
-  product.id = new mongoose.Types.ObjectId(product.id);
+  const sellerDoc = await Seller.findById(sellerID).select("user");
+  if (!sellerDoc) {
+    throw new ApiError(400, "seller not found");
+  }
+  if (sellerDoc.user.toString() === req.user._id.toString()) {
+    throw new ApiError(400, "You cannot buy your own products");
+  }
+
+  product.id = new mongoose.Types.ObjectId(String(product.id));
   product.quantity = Number(product.quantity);
-  product.delivery = Boolean(product.delivery);
 
   const updatedProduct = await Product.findOneAndUpdate(
     {
@@ -52,18 +59,7 @@ const placeOrder = asyncExe(async (req, res) => {
         totalPrice: {
           $multiply: ["$priceInfo.sellingPrice", product.quantity],
         },
-        otherCost: {
-          $cond: {
-            if: {
-              $and: [
-                { $eq: [product.delivery, true] },
-                { $eq: ["$delivery.option", true] },
-              ],
-            },
-            then: "$delivery.cost",
-            else: 0,
-          },
-        },
+        otherCost: 0,
         id: "$_id",
       },
     },
@@ -75,7 +71,6 @@ const placeOrder = asyncExe(async (req, res) => {
           quantity: "$quantity",
           name: "$name",
           price: "$priceInfo.sellingPrice",
-          delivery: { $and: [product.delivery, "$delivery.option"] },
         },
         seller: "$owner",
         price: {
@@ -92,10 +87,7 @@ const placeOrder = asyncExe(async (req, res) => {
   let orderdata = productDetails[0];
   orderdata.orderID = generateOrderID();
   orderdata.buyer = req.user._id;
-
-  if (orderdata.product.delivery) {
-    orderdata.address = req.user.address;
-  }
+  orderdata.address = req.user.address;
 
   const placedOrder = await Order.create(orderdata);
 
@@ -112,7 +104,9 @@ const placeOrder = asyncExe(async (req, res) => {
 });
 
 const getUserOrders = asyncExe(async (req, res) => {
-  const orders = await Order.find({ buyer: req.user._id });
+  const orders = await Order.find({ buyer: req.user._id }).sort({
+    createdAt: -1,
+  });
 
   res
     .status(200)
@@ -121,30 +115,44 @@ const getUserOrders = asyncExe(async (req, res) => {
 
 const getStoreOrders = asyncExe(async (req, res) => {
   const id = req.params.id;
-  const status = req.query.status || "all";
+  let status = req?.query?.status;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 6;
   if (!id) {
     throw new ApiError(400, "store id required");
   }
 
-  const user = await Seller.findById(id).select("user");
-  if (!user) {
-    throw new ApiError(400, "wrong store id");
+  const store = await Seller.findOne({ _id: id, user: req.user._id });
+  if (!store) {
+    throw new ApiError(401, "not authorized or wrong store id");
   }
 
-  if (!(user.user.toString() === req.user._id.toString())) {
-    throw new ApiError(401, "not authorized");
+  const allowedStatuses = [
+    "waiting-to-accept",
+    "accepted",
+    "processing",
+    "processed",
+    "delivered",
+    "cancelled",
+    "returned",
+  ];
+  let filter = { seller: id };
+  if (allowedStatuses.includes(status)) {
+    filter.status = status;
   }
 
-  let orders;
-  if (status == "all") {
-    orders = await Order.find({ seller: id });
-  } else {
-    orders = await Order.find({ $and: [{ seller: id }, { status }] });
-  }
+  const total = await Order.countDocuments(filter);
+  const orders = await Order.find(filter)
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .populate("buyer", "name phoneNumber email");
 
   res
     .status(200)
-    .json(new ApiResponse(200, orders, "orders fetched successfully"));
+    .json(
+      new ApiResponse(200, { orders, total }, "orders fetched successfully")
+    );
 });
 
 const acceptOrder = asyncExe(async (req, res) => {
@@ -158,19 +166,16 @@ const acceptOrder = asyncExe(async (req, res) => {
     throw new ApiError(400, "order ID required");
   }
 
-  const user = await Seller.findById(sellerID).select("user");
-  if (!user) {
-    throw new ApiError(400, "seller not found");
-  }
-  if (!(user.user.toString() === req.user._id.toString())) {
-    throw new ApiError(401, "not authorized");
+  const seller = await Seller.findOne({ _id: sellerID, user: req.user._id });
+  if (!seller) {
+    throw new ApiError(401, "not authorized or seller not found");
   }
 
   const order = await Order.findOneAndUpdate(
     {
       _id: orderID,
       seller: sellerID,
-      status: { $in: ["waiting-to-accept", "accepted"] },
+      status: "waiting-to-accept",
     },
     {
       $set: { status: "accepted" },
@@ -191,24 +196,64 @@ const acceptOrder = asyncExe(async (req, res) => {
 
 const cancelOrder = asyncExe(async (req, res) => {
   const orderID = req.body.orderID;
+  const seller = req.body.seller;
   if (!orderID) {
     throw new ApiError(400, "order ID required");
   }
   const order = await Order.findOneAndUpdate(
     {
       orderID,
-      buyer: req.user._id,
       status: { $nin: ["delivered", "cancelled", "returned"] },
+      $or: [{ buyer: req.user._id }, { seller }],
     },
     { $set: { status: "cancelled" } },
     { new: true }
   );
   if (!order) {
-    throw new ApiError(400, "Order cannot be cancelled");
+    throw new ApiError(403, "Not authorized or order cannot be cancelled");
+  }
+
+  // Add back the stock
+  if (order.product?.id && order.product?.quantity) {
+    await Product.findByIdAndUpdate(order.product.id, {
+      $inc: { stocks: order.product.quantity },
+    });
   }
   res
     .status(200)
     .json(new ApiResponse(200, order, "Order cancelled successfully"));
 });
 
-export { placeOrder, getStoreOrders, getUserOrders, acceptOrder, cancelOrder };
+const finalizeOrder = asyncExe(async (req, res) => {
+  const orderID = req.body.orderID;
+  if (!orderID) {
+    throw new ApiError(400, "order ID required");
+  }
+
+  const order = await Order.findOneAndUpdate(
+    {
+      orderID,
+      buyer: req.user._id,
+      status: "accepted",
+    },
+    { $set: { status: "processing" } },
+    { new: true }
+  );
+  if (!order) {
+    throw new ApiError(400, "Order cannot be finalized");
+  }
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, order, "Order finalized and moved to processing")
+    );
+});
+
+export {
+  placeOrder,
+  getStoreOrders,
+  getUserOrders,
+  acceptOrder,
+  cancelOrder,
+  finalizeOrder,
+};

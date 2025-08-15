@@ -3,6 +3,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncExe } from "../utils/asyncExecute.js";
 import { Seller } from "../models/seller.model.js";
 import { User } from "../models/user.model.js";
+import { Order } from "../models/order.model.js";
+import { Product } from "../models/product.model.js";
 
 const createStore = asyncExe(async (req, res) => {
   const { storeName, ownerName, description, phone, address } = req.body;
@@ -27,7 +29,7 @@ const createStore = asyncExe(async (req, res) => {
     ownerName,
     user: req.user._id,
     description,
-    contact: { phone, address },
+    contact: { phone, address, email: req.user.email },
   });
 
   const createdStore = await Seller.findById(store._id);
@@ -66,4 +68,45 @@ const storeDetails = asyncExe(async (req, res) => {
     .json(new ApiResponse(200, store, "store fetched successfully"));
 });
 
-export { createStore, storeDetails };
+const getStoreStats = asyncExe(async (req, res) => {
+  const storeID = req.params.id;
+  if (!storeID) {
+    throw new ApiError(400, "store id required");
+  }
+
+  const store = await Seller.findById(storeID).select("user");
+  if (!store) {
+    throw new ApiError(404, "Store not found");
+  }
+  if (store.user.toString() !== req.user._id.toString()) {
+    throw new ApiError(401, "Not authorized to view this store's stats");
+  }
+
+  const productsCount = await Product.countDocuments({ owner: storeID });
+
+  let ordersCount = 0;
+  let revenue = 0;
+  try {
+    const orders = await Order.find({
+      seller: storeID,
+      status: { $ne: "cancelled" },
+    });
+    ordersCount = orders.length;
+    revenue = orders.reduce((sum, o) => sum + (o.price?.grandTotal || 0), 0);
+  } catch (e) {
+    // If Order model or data not available, skip
+  }
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        products: productsCount,
+        orders: ordersCount,
+        revenue,
+      },
+      "store stats fetched successfully"
+    )
+  );
+});
+
+export { createStore, storeDetails, getStoreStats };

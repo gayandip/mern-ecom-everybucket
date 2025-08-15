@@ -19,13 +19,6 @@ const productSchema = new Schema(
       mrp: { type: Number, required: true },
       sellingPrice: { type: Number, required: true },
     },
-    delivery: {
-      option: {
-        type: Boolean,
-        required: true,
-      },
-      cost: { type: Number, required: true },
-    },
     owner: {
       type: Schema.Types.ObjectId,
       ref: "Seller",

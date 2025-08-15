@@ -24,8 +24,8 @@ const Dashboard = () => {
     data: statsData,
     loading: statsLoading,
     error: statsError,
-  } = useApiGet(storeId ? `/products/get/store-stats/${storeId}` : null);
-  const stats = statsData || {};
+  } = useApiGet(storeId ? `/stores/get/store-stats/${storeId}` : null);
+  const stats = statsData?.data || {};
 
   const options = [
     {
@@ -34,17 +34,17 @@ const Dashboard = () => {
       bg: "yellow",
     },
     {
-      to: "/store/my-products",
+      to: `/store/my-products/${storeId}`,
       text: "Manage Products",
       bg: "blue",
     },
     {
-      to: "/store/my-orders",
+      to: `/store/my-orders/${storeId}`,
       text: "View Orders",
       bg: "green",
     },
     {
-      to: "/seller/profile",
+      to: "/store/my-store",
       text: "Edit Profile",
       bg: "yellow",
     },
@@ -89,6 +89,7 @@ const Dashboard = () => {
               <div className="font-bold text-xl">{store.storeName}</div>
               <div className="text-gray-600">Owner: {store.ownerName}</div>
               <div className="text-gray-600">Phone: {store.contact?.phone}</div>
+              <div className="text-gray-600">Email: {store.contact?.email}</div>
               <div className="text-gray-600">
                 Address: {store.contact?.address}
               </div>
